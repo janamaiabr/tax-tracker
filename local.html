@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tax Tracker FY26</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; background: #f5f5f5; color: #333; padding: 15px; }
+        .container { max-width: 600px; margin: 0 auto; }
+        h1 { font-size: 1.3rem; }
+        
+        .card { background: white; border-radius: 12px; padding: 15px; margin-bottom: 15px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        
+        .form-group { margin-bottom: 12px; }
+        .form-group label { display: block; font-size: 0.75rem; color: #666; margin-bottom: 4px; }
+        .form-group input, .form-group select { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem; }
+        
+        .entity-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+        .entity-btn { padding: 10px 16px; border-radius: 20px; border: 2px solid #ddd; background: white; cursor: pointer; font-size: 0.85rem; }
+        .entity-btn.selected { border-color: #00D084; background: #e8f5e9; }
+        
+        .btn { background: #00D084; color: white; padding: 12px 20px; border-radius: 25px; border: none; font-weight: 600; cursor: pointer; width: 100%; }
+        .btn-secondary { background: #666; }
+        
+        .expense-row { display: flex; align-items: center; gap: 10px; padding: 12px; border-bottom: 1px solid #eee; }
+        .expense-row:last-child { border-bottom: none; }
+        .expense-info { flex: 1; }
+        .expense-desc { font-weight: 600; }
+        .expense-meta { font-size: 0.75rem; color: #666; }
+        .expense-amt { font-size: 1.1rem; font-weight: 700; color: #00D084; }
+        .expense-entities { font-size: 0.7rem; color: #888; }
+        
+        .receipt-indicator { color: #4caf50; font-size: 0.75rem; }
+        .no-receipt { color: #ccc; font-size: 0.75rem; }
+        
+        .delete-btn { background: #ff5252; color: white; border: none; padding: 6px 10px; border-radius: 15px; cursor: pointer; }
+        
+        .total { text-align: center; padding: 15px; background: #00D084; color: white; border-radius: 10px; margin-bottom: 15px; }
+        .total-amt { font-size: 1.8rem; font-weight: 800; }
+        
+        .tabs { display: flex; gap: 5px; margin-bottom: 15px; }
+        .tab { flex: 1; padding: 10px; text-align: center; background: #ddd; border: none; border-radius: 8px; cursor: pointer; }
+        .tab.active { background: #00D084; color: white; }
+        
+        .file-input { display: none; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧾 Tax Tracker FY26</h1>
+        
+        <!-- ADD FORM -->
+        <div class="card">
+            <h3 style="margin-bottom:15px">➕ Add Expense</h3>
+            
+            <div class="form-group">
+                <label>Description</label>
+                <input type="text" id="desc" placeholder="e.g. Internet, Mortgage Interest, Figma...">
+            </div>
+            
+            <div class="form-group">
+                <label>Amount ($)</label>
+                <input type="number" id="amt" placeholder="0.00">
+            </div>
+            
+            <div class="form-group">
+                <label>Date</label>
+                <input type="date" id="date">
+            </div>
+            
+            <div class="form-group">
+                <label>Category</label>
+                <select id="cat">
+                    <option value="Home Office">Home Office</option>
+                    <option value="Internet">Internet</option>
+                    <option value="Phone">Phone</option>
+                    <option value="Software">Software</option>
+                    <option value="Equipment">Equipment</option>
+                    <option value="Education">Education</option>
+                    <option value="Membership">Membership</option>
+                    <option value="Insurance">Insurance</option>
+                    <option value="Mortgage Interest">Mortgage Interest</option>
+                    <option value="Council Rates">Council Rates</option>
+                    <option value="Land Tax">Land Tax</option>
+                    <option value="Maintenance">Maintenance</option>
+                    <option value="Management Fee">Management Fee</option>
+                    <option value="Depreciation">Depreciation</option>
+                    <option value="Trading Loss">Trading/CFD Loss</option>
+                    <option value="Other">Other</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label>Who claims 100%? (select all that apply)</label>
+                <div class="entity-row">
+                    <button class="entity-btn entity-jana" onclick="toggleEntity(this, 'Jana')">Jana</button>
+                    <button class="entity-btn entity-juliano" onclick="toggleEntity(this, 'Juliano')">Juliano</button>
+                    <button class="entity-btn entity-urbix" onclick="toggleEntity(this, 'Urbix')">Urbix</button>
+                    <button class="entity-btn entity-nz" onclick="toggleEntity(this, 'NZ')">NZ Co</button>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label>Receipt (optional)</label>
+                <input type="file" id="receiptFile" accept="image/*,.pdf">
+            </div>
+            
+            <button class="btn" onclick="addExpense()">Add Expense</button>
+        </div>
+        
+        <!-- TOTAL -->
+        <div class="total">
+            <div>Total Claimable</div>
+            <div class="total-amt" id="totalDisplay">$0</div>
+        </div>
+        
+        <!-- LIST -->
+        <div class="tabs">
+            <button class="tab active" onclick="filter='all';render()">All</button>
+            <button class="tab" onclick="filter='Jana'">Jana</button>
+            <button class="tab" onclick="filter='Juliano'">Juliano</button>
+            <button class="tab" onclick="filter='Urbix'">Urbix</button>
+            <button class="tab" onclick="filter='NZ'">NZ Co</button>
+        </div>
+        
+        <div class="card">
+            <div id="expenseList"></div>
+        </div>
+        
+        <button class="btn btn-secondary" onclick="exportCSV()">📥 Export CSV</button>
+    </div>
+
+<script>
+let selectedEntities = [];
+let expenses = JSON.parse(localStorage.getItem('taxExp2026') || '[]');
+
+function save() {
+    localStorage.setItem('taxExp2026', JSON.stringify(expenses));
+    updateTotal();
+}
+
+function toggleEntity(btn, entity) {
+    btn.classList.toggle('selected');
+    if(selectedEntities.includes(entity)) {
+        selectedEntities = selectedEntities.filter(e => e !== entity);
+    } else {
+        selectedEntities.push(entity);
+    }
+}
+
+function addExpense() {
+    const desc = document.getElementById('desc').value.trim();
+    const amt = parseFloat(document.getElementById('amt').value) || 0;
+    const date = document.getElementById('date').value || new Date().toISOString().split('T')[0];
+    const cat = document.getElementById('cat').value;
+    const receiptFile = document.getElementById('receiptFile').files[0];
+    
+    if(!desc || amt <= 0 || selectedEntities.length === 0) {
+        alert('Please fill: description, amount, and select at least one person/company');
+        return;
+    }
+    
+    const expense = {
+        id: Date.now(),
+        desc,
+        amount: amt,
+        date,
+        category: cat,
+        entities: [...selectedEntities],
+        receiptName: receiptFile ? receiptFile.name : null
+    };
+    
+    if(receiptFile) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            expense.receiptData = e.target.result;
+            saveExpense(expense);
+        };
+        reader.readAsDataURL(receiptFile);
+    } else {
+        saveExpense(expense);
+    }
+}
+
+function saveExpense(expense) {
+    expenses.push(expense);
+    save();
+    
+    // Clear form
+    document.getElementById('desc').value = '';
+    document.getElementById('amt').value = '';
+    document.getElementById('receiptFile').value = '';
+    document.querySelectorAll('.entity-btn').forEach(b => b.classList.remove('selected'));
+    selectedEntities = [];
+    
+    render();
+    alert('Expense added! 💚');
+}
+
+function deleteExpense(id) {
+    expenses = expenses.filter(e => e.id !== id);
+    save();
+    render();
+}
+
+function updateTotal() {
+    let total = 0;
+    expenses.forEach(e => {
+        if(filter === 'all' || e.entities.includes(filter)) {
+            total += e.amount * e.entities.length; // Each entity claims 100%
+        }
+    });
+    document.getElementById('totalDisplay').textContent = '$' + total.toLocaleString();
+}
+
+let filter = 'all';
+
+function render() {
+    const list = document.getElementById('expenseList');
+    
+    const filtered = expenses.filter(e => {
+        if(filter === 'all') return true;
+        return e.entities.includes(filter);
+    }).sort((a,b) => new Date(b.date) - new Date(a.date));
+    
+    if(filtered.length === 0) {
+        list.innerHTML = '<div style="text-align:center;color:#999;padding:30px">No expenses yet. Add one above!</div>';
+        return;
+    }
+    
+    list.innerHTML = filtered.map(e => `
+        <div class="expense-row">
+            <div class="expense-info">
+                <div class="expense-desc">${e.desc}</div>
+                <div class="expense-meta">${e.date} • ${e.category}</div>
+                <div class="expense-entities">${e.entities.map(en => en + ' (100%)').join(', ')}</div>
+                ${e.receiptName ? '<span class="receipt-indicator">📎 ' + e.receiptName + '</span>' : '<span class="no-receipt">no receipt</span>'}
+            </div>
+            <div class="expense-amt">$${e.amount.toLocaleString()}</div>
+            <button class="delete-btn" onclick="deleteExpense(${e.id})">×</button>
+        </div>
+    `).join('');
+    
+    updateTotal();
+}
+
+function exportCSV() {
+    let csv = 'Date,Description,Category,Amount,Entities,Receipt\n';
+    expenses.forEach(e => {
+        csv += `${e.date},"${e.desc}","${e.category}",${e.amount},"${e.entities.join('|')}",${e.receiptName || ''}\n`;
+    });
+    
+    const blob = new Blob([csv], {type: 'text/csv'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'tax-expenses-FY26.csv';
+    a.click();
+}
+
+// Set default date to today
+document.getElementById('date').value = new Date().toISOString().split('T')[0];
+
+render();
+</script>
+</body>
+</html>

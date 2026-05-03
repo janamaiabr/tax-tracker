@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#1a1a2e">
+    <title>🧾 Tax Tracker</title>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'DM Sans', sans-serif; background: #f8f9fb; padding: 16px; color: #1a1a2e; }
+        h1 { text-align: center; margin-bottom: 16px; font-size: 1.5rem; }
+        
+        .tabs { display: flex; gap: 4px; margin-bottom: 16px; background: white; padding: 4px; border-radius: 12px; }
+        .tab { flex: 1; padding: 12px 8px; text-align: center; background: transparent; border: none; border-radius: 8px; font-weight: 600; font-size: 0.8rem; cursor: pointer; }
+        .tab.active { background: #1a1a2e; color: white; }
+        
+        .card { background: white; border-radius: 16px; padding: 16px; margin-bottom: 12px; }
+        .btn { background: #1a1a2e; color: white; padding: 14px; border-radius: 10px; border: none; font-weight: 600; width: 100%; margin-bottom: 8px; font-size: 1rem; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+        .btn:active { opacity: 0.8; }
+        .btn-secondary { background: white; color: #1a1a2e; border: 2px solid #1a1a2e; }
+        
+        .entities { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; }
+        .entity { flex: 1; min-width: 60px; padding: 10px; border: 2px solid #ddd; border-radius: 8px; text-align: center; font-weight: 600; font-size: 0.75rem; cursor: pointer; }
+        .entity.selected { background: #1a1a2e; color: white; border-color: #1a1a2e; }
+        
+        input, select { width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 8px; font-size: 1rem; margin-bottom: 12px; }
+        input:focus { border-color: #1a1a2e; outline: none; }
+        
+        .checkbox { display: flex; gap: 8px; align-items: center; margin-bottom: 16px; }
+        .checkbox input { width: 24px; height: 24px; margin: 0; }
+        .checkbox label { font-weight: 600; }
+        
+        .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px; }
+        .stat { background: #f0f0f0; padding: 12px; border-radius: 8px; text-align: center; }
+        .stat-label { font-size: 0.7rem; color: #666; font-weight: 600; }
+        .stat-value { font-size: 1.2rem; font-weight: 700; }
+        .stat.highlight { background: #1a1a2e; }
+        .stat.highlight .stat-label { color: rgba(255,255,255,0.7); }
+        .stat.highlight .stat-value { color: #00D084; }
+        
+        .expense-row { display: flex; justify-content: space-between; padding: 12px; border-bottom: 1px solid #eee; }
+        .expense-row:last-child { border-bottom: none; }
+        .expense-desc { font-weight: 600; font-size: 0.9rem; }
+        .expense-meta { font-size: 0.75rem; color: #666; }
+        .expense-amt { font-weight: 700; }
+        
+        .camera-btn { width: 100%; padding: 20px; border: 2px dashed #ddd; border-radius: 10px; text-align: center; cursor: pointer; font-size: 2rem; margin-bottom: 12px; }
+        .camera-preview { width: 100%; max-height: 200px; object-fit: cover; border-radius: 10px; margin-bottom: 12px; display: none; }
+        
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+    <h1>🧾 Tax Tracker</h1>
+    
+    <div class="tabs">
+        <button class="tab active" onclick="show('dash')">📊 Dashboard</button>
+        <button class="tab" onclick="show('add')">➕ Add</button>
+        <button class="tab" onclick="show('list')">📝 Lista</button>
+        <button class="tab" onclick="show('backup')">💾 Backup</button>
+    </div>
+    
+    <!-- DASHBOARD -->
+    <div id="dash">
+        <div class="card">
+            <div class="stat-grid">
+                <div class="stat highlight"><div class="stat-label">TOTAL</div><div class="stat-value" id="total">$0</div></div>
+                <div class="stat"><div class="stat-label">ITEMS</div><div class="stat-value" id="count">0</div></div>
+            </div>
+            <div class="stat-grid">
+                <div class="stat"><div class="stat-label">JANA</div><div class="stat-value" id="jana">$0</div></div>
+                <div class="stat"><div class="stat-label">JULIANO</div><div class="stat-value" id="juliano">$0</div></div>
+                <div class="stat"><div class="stat-label">URBIX</div><div class="stat-value" id="urbix">$0</div></div>
+                <div class="stat"><div class="stat-label">NZ</div><div class="stat-value" id="nz">$0</div></div>
+            </div>
+            <div class="stat-grid">
+                <div class="stat"><div class="stat-label">PROP</div><div class="stat-value" id="prop">$0</div></div>
+            </div>
+        </div>
+        <div class="card">
+            <h3 style="margin-bottom:12px;">Últimas despesas</h3>
+            <div id="recent"></div>
+        </div>
+    </div>
+    
+    <!-- ADD -->
+    <div id="add" class="hidden">
+        <div class="card">
+            <input type="text" id="desc" placeholder="Descrição (ex: Internet, Council Rates...)">
+            <input type="number" id="amt" placeholder="Valor $">
+            
+            <p style="margin-bottom:8px;font-size:0.8rem;font-weight:600;">Quem claima? (selecione múltiplos)</p>
+            <div class="entities">
+                <div class="entity" onclick="toggle(this)">Jana</div>
+                <div class="entity" onclick="toggle(this)">Juliano</div>
+                <div class="entity" onclick="toggle(this)">Urbix</div>
+                <div class="entity" onclick="toggle(this)">NZ</div>
+            </div>
+            
+            <div class="checkbox">
+                <input type="checkbox" id="propCheck">
+                <label onclick="document.getElementById('propCheck').click()">🏠 Despesa propriedade? (11 Central Ave)</label>
+            </div>
+            
+            <!-- Camera -->
+            <div class="camera-btn" onclick="startCamera()" id="camBtn">📷 Tirar foto do recibo</div>
+            <video id="video" autoplay style="display:none;width:100%;border-radius:10px;margin-bottom:12px;"></video>
+            <canvas id="canvas" style="display:none;"></canvas>
+            <img id="preview" class="camera-preview">
+            
+            <button class="btn" onclick="save()">💾 Salvar</button>
+        </div>
+    </div>
+    
+    <!-- LIST -->
+    <div id="list" class="hidden">
+        <div class="card" id="expenses"></div>
+    </div>
+    
+    <!-- BACKUP -->
+    <div id="backup" class="hidden">
+        <div class="card">
+            <button class="btn" onclick="exportCSV()">📥 Export CSV (Google Sheets)</button>
+            <button class="btn btn-secondary" onclick="document.getElementById('import').click()">📤 Import CSV</button>
+            <input type="file" id="import" style="display:none" accept=".csv" onchange="importCSV(this)">
+        </div>
+    </div>
+    
+    <script>
+    let selected = [];
+    let expenses = JSON.parse(localStorage.getItem('tax2026') || '[]');
+    let stream = null;
+    let photoData = null;
+    
+    function toggle(el) { el.classList.toggle('selected'); selected = Array.from(document.querySelectorAll('.entity.selected')).map(e => e.textContent); }
+    
+    function save() {
+        const desc = document.getElementById('desc').value.trim();
+        const amt = parseFloat(document.getElementById('amt').value) || 0;
+        const prop = document.getElementById('propCheck').checked;
+        
+        if(!desc || selected.length === 0) { alert('Descrição + selecionar quem claima'); return; }
+        
+        selected.forEach(entity => {
+            expenses.push({
+                id: Date.now() + Math.random(),
+                desc: desc + (prop ? ' 🏠' : ''),
+                amount: amt,
+                date: new Date().toISOString().split('T')[0],
+                entities: [entity],
+                propertyRelated: prop,
+                receipt: photoData
+            });
+        });
+        
+        localStorage.setItem('tax2026', JSON.stringify(expenses));
+        alert(selected.length + ' despesa(s) salva(s)!');
+        
+        document.getElementById('desc').value = '';
+        document.getElementById('amt').value = '';
+        document.getElementById('propCheck').checked = false;
+        selected.forEach(e => document.querySelectorAll('.entity').forEach(el => el.classList.remove('selected')));
+        selected = [];
+        photoData = null;
+        document.getElementById('preview').style.display = 'none';
+        show('dash');
+    }
+    
+    function render() {
+        const totals = { Jana: 0, Juliano: 0, Urbix: 0, NZ: 0, Prop: 0 };
+        expenses.forEach(e => {
+            e.entities.forEach(ent => {
+                if(ent === 'Jana' || ent === '🏠 Prop') totals.Jana += e.amount;
+                if(ent === 'Juliano') totals.Juliano += e.amount;
+                if(ent === 'Urbix') totals.Urbix += e.amount;
+                if(ent === 'NZ') totals.NZ += e.amount;
+                if(ent === '🏠 Prop') totals.Prop += e.amount;
+            });
+        });
+        
+        const total = Object.values(totals).reduce((a,b) => a+b, 0);
+        document.getElementById('total').textContent = '$' + total;
+        document.getElementById('count').textContent = expenses.length;
+        document.getElementById('jana').textContent = '$' + totals.Jana;
+        document.getElementById('juliano').textContent = '$' + totals.Juliano;
+        document.getElementById('urbix').textContent = '$' + totals.Urbix;
+        document.getElementById('nz').textContent = '$' + totals.NZ;
+        document.getElementById('prop').textContent = '$' + totals.Prop;
+        
+        const list = document.getElementById('expenses');
+        const recent = document.getElementById('recent');
+        
+        if(expenses.length === 0) {
+            list.innerHTML = '<p style="text-align:center;color:#999">Nenhuma despesa</p>';
+            recent.innerHTML = '<p style="text-align:center;color:#999">Nenhuma despesa</p>';
+            return;
+        }
+        
+        const html = expenses.slice(-10).reverse().map(e => `
+            <div class="expense-row">
+                <div>
+                    <div class="expense-desc">${e.desc}</div>
+                    <div class="expense-meta">${e.date} · ${e.entities.join(', ')}</div>
+                </div>
+                <div class="expense-amt">$${e.amount}</div>
+            </div>
+        `).join('');
+        
+        list.innerHTML = html;
+        recent.innerHTML = html;
+    }
+    
+    function show(tab) {
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.tab')[{dash:0,add:1,list:2,backup:3}[tab]].classList.add('active');
+        document.getElementById('dash').classList.add('hidden');
+        document.getElementById('add').classList.add('hidden');
+        document.getElementById('list').classList.add('hidden');
+        document.getElementById('backup').classList.add('hidden');
+        document.getElementById(tab).classList.remove('hidden');
+        if(tab === 'dash' || tab === 'list') render();
+    }
+    
+    async function startCamera() {
+        try {
+            stream = await navigator.mediaDevices.getUserMedia({video: {facingMode: 'environment'}});
+            const video = document.getElementById('video');
+            video.srcObject = stream;
+            video.style.display = '';
+            document.getElementById('camBtn').style.display = 'none';
+        } catch(e) { alert('Camera não disponível: ' + e.message); }
+    }
+    
+    function exportCSV() {
+        const rows = expenses.map(e => [e.date, e.desc, e.amount, e.entities.join(';'), e.propertyRelated]);
+        const csv = ['Date,Description,Amount,Entities,Property', ...rows.map(r => r.join(','))].join('\n');
+        const blob = new Blob([csv], {type: 'text/csv'});
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = 'tax-2026.csv';
+        a.click();
+    }
+    
+    function importCSV(input) {
+        const file = input.files[0];
+        if(!file) return;
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const lines = e.target.result.split('\n');
+            for(let i = 1; i < lines.length; i++) {
+                const cols = lines[i].split(',');
+                if(cols.length >= 3) {
+                    expenses.push({
+                        id: Date.now() + i,
+                        desc: cols[1],
+                        amount: parseFloat(cols[2]) || 0,
+                        date: cols[0],
+                        entities: cols[3]?.split(';') || [],
+                        propertyRelated: cols[4] === 'true'
+                    });
+                }
+            }
+            localStorage.setItem('tax2026', JSON.stringify(expenses));
+            alert('Importado!');
+            render();
+        };
+        reader.readAsText(file);
+    }
+    
+    render();
+    </script>
+</body>
+</html>

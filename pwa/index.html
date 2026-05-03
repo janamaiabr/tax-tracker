@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#fafafa">
+    <title>Tax Tracker</title>
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="icon.png">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body {
+            font-family: 'Inter', -apple-system, sans-serif;
+            background: #fafafa;
+            min-height: 100vh;
+            color: #1a1a1a;
+        }
+        .container { max-width: 400px; margin: 0 auto; padding: 20px; }
+        
+        .camera-view {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: #000;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+        }
+        .camera-view video { flex: 1; object-fit: cover; }
+        
+        .camera-btn {
+            position: absolute;
+            bottom: 60px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: white;
+            border: 4px solid #ccc;
+            cursor: pointer;
+        }
+        .camera-btn:active { transform: translateX(-50%) scale(0.9); }
+        
+        .close-btn {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: rgba(0,0,0,0.5);
+            color: white;
+            border: none;
+            font-size: 20px;
+            cursor: pointer;
+        }
+        
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .logo { font-size: 1.4rem; font-weight: 600; }
+        .year { color: #999; font-size: 0.9rem; }
+        
+        .total-card {
+            background: white;
+            border: 1px solid #e5e5e5;
+            border-radius: 16px;
+            padding: 24px;
+            margin-bottom: 16px;
+        }
+        .total-label { font-size: 0.75rem; color: #999; text-transform: uppercase; letter-spacing: 0.05em; }
+        .total-value { font-size: 2rem; font-weight: 600; margin-top: 4px; }
+        
+        .stats { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .stat-card {
+            background: white;
+            border: 1px solid #e5e5e5;
+            border-radius: 12px;
+            padding: 16px;
+            text-align: center;
+        }
+        .stat-value { font-size: 1.4rem; font-weight: 600; }
+        .stat-label { font-size: 0.7rem; color: #999; margin-top: 2px; }
+        
+        .btn {
+            width: 100%;
+            padding: 16px;
+            background: #1a1a1a;
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 600;
+            margin-top: 20px;
+            cursor: pointer;
+        }
+        
+        .form { margin-top: 20px; }
+        .form-group { margin-bottom: 16px; }
+        .form-label { font-size: 0.75rem; color: #999; text-transform: uppercase; margin-bottom: 6px; }
+        .form-input {
+            width: 100%;
+            padding: 14px;
+            border: 1px solid #e5e5e5;
+            border-radius: 10px;
+            font-size: 1rem;
+            background: white;
+        }
+        
+        .entity-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+        .entity-btn {
+            padding: 12px;
+            background: #f5f5f5;
+            border: 1px solid #e5e5e5;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            cursor: pointer;
+        }
+        .entity-btn.selected { background: #1a1a1a; color: white; border-color: #1a1a1a; }
+        
+        .toggle-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 14px;
+            background: #f5f5f5;
+            border-radius: 10px;
+            margin-top: 16px;
+        }
+        .toggle {
+            width: 44px;
+            height: 24px;
+            background: #ccc;
+            border-radius: 12px;
+            position: relative;
+        }
+        .toggle.active { background: #1a1a1a; }
+        .toggle::after {
+            content: '';
+            position: absolute;
+            width: 18px; height: 18px;
+            background: white;
+            border-radius: 50%;
+            top: 3px; left: 3px;
+        }
+        .toggle.active::after { left: 23px; }
+        
+        .expenses { margin-top: 24px; }
+        .expense {
+            display: flex;
+            justify-content: space-between;
+            padding: 14px;
+            background: white;
+            border: 1px solid #e5e5e5;
+            border-radius: 10px;
+            margin-bottom: 8px;
+        }
+        .expense-desc { font-weight: 500; }
+        .expense-meta { font-size: 0.75rem; color: #999; margin-top: 2px; }
+        .expense-amt { font-weight: 600; }
+        
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #1a1a1a;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 8px;
+            opacity: 0;
+            transition: 0.3s;
+        }
+        .toast.show { opacity: 1; }
+        
+        #photoPreview { display: none; width: 100%; border-radius: 10px; margin-top: 12px; }
+    </style>
+</head>
+<body>
+    <!-- Camera Overlay -->
+    <div class="camera-view" id="cameraView" style="display:none;">
+        <video id="video" autoplay playsinline></video>
+        <button class="close-btn" onclick="closeCamera()">✕</button>
+        <button class="camera-btn" onclick="takePhoto()"></button>
+    </div>
+    
+    <div class="container">
+        <div class="header">
+            <div class="logo">Tax Tracker</div>
+            <div class="year">2026</div>
+        </div>
+        
+        <div class="total-card">
+            <div class="total-label">Total Deductions</div>
+            <div class="total-value" id="total">$0</div>
+            <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap" id="breakdown"></div>
+        </div>
+        
+        <div class="stats">
+            <div class="stat-card">
+                <div class="stat-value" id="count">0</div>
+                <div class="stat-label">Items</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="props">0</div>
+                <div class="stat-label">Properties</div>
+            </div>
+        </div>
+        
+        <button class="btn" onclick="openCamera()">📷 Tirar Foto do Recibo</button>
+        <img id="photoPreview">
+        
+        <div class="form">
+            <div class="form-group">
+                <div class="form-label">Description</div>
+                <input type="text" class="form-input" id="desc" placeholder="Internet, Council Rates...">
+            </div>
+            
+            <div class="form-group">
+                <div class="form-label">Amount ($)</div>
+                <input type="number" class="form-input" id="amount" placeholder="0.00" inputmode="decimal">
+            </div>
+            
+            <div class="form-group">
+                <div class="form-label">Who Claims?</div>
+                <div class="entity-grid">
+                    <button class="entity-btn" onclick="toggle(this)">Jana</button>
+                    <button class="entity-btn" onclick="toggle(this)">Juliano</button>
+                    <button class="entity-btn" onclick="toggle(this)">Urbix</button>
+                    <button class="entity-btn" onclick="toggle(this)">NZ Co</button>
+                    <button class="entity-btn" onclick="toggle(this)">Property</button>
+                </div>
+            </div>
+            
+            <div class="toggle-row">
+                <span>Property Related?</span>
+                <div class="toggle" id="propToggle" onclick="this.classList.toggle('active')"></div>
+            </div>
+            
+            <button class="btn" onclick="save()">Save</button>
+        </div>
+        
+        <div class="expenses" id="expenses"></div>
+    </div>
+    
+    <div class="toast" id="toast">Saved!</div>
+    
+    <canvas id="canvas" style="display:none;"></canvas>
+    
+    <script>
+    let expenses = JSON.parse(localStorage.getItem('tax2026') || '[]');
+    let selected = [];
+    let photoData = null;
+    let stream = null;
+    
+    function toggle(btn) {
+        btn.classList.toggle('selected');
+        if (selected.includes(btn.textContent)) {
+            selected = selected.filter(s => s !== btn.textContent);
+        } else {
+            selected.push(btn.textContent);
+        }
+    }
+    
+    async function openCamera() {
+        try {
+            stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+            document.getElementById('video').srcObject = stream;
+            document.getElementById('cameraView').style.display = 'flex';
+        } catch(e) {
+            showToast('Camera not available');
+        }
+    }
+    
+    function closeCamera() {
+        if (stream) stream.getTracks().forEach(t => t.stop());
+        document.getElementById('cameraView').style.display = 'none';
+    }
+    
+    async function takePhoto() {
+        const video = document.getElementById('video');
+        const canvas = document.getElementById('canvas');
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        canvas.getContext('2d').drawImage(video, 0, 0);
+        photoData = canvas.toDataURL('image/jpeg', 0.7);
+        document.getElementById('photoPreview').src = photoData;
+        document.getElementById('photoPreview').style.display = 'block';
+        closeCamera();
+        
+        // Analyze with AI
+        showToast('🤖 Analyzing receipt...');
+        try {
+            const res = await fetch('https://pwa-smoky-gamma.vercel.app/api/analyze', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ image: photoData })
+            });
+            const data = await res.json();
+            
+            if (data.amount && data.amount > 0) {
+                document.getElementById('amount').value = data.amount;
+            }
+            if (data.date) {
+                // Can't set date easily, skip
+            }
+            if (data.description && data.description !== 'Unknown') {
+                document.getElementById('desc').value = data.description;
+            }
+            showToast('✅ Details filled!');
+        } catch(e) {
+            showToast('Could not analyze - fill manually');
+        }
+    }
+    
+    function save() {
+        const desc = document.getElementById('desc').value.trim();
+        const amount = parseFloat(document.getElementById('amount').value) || 0;
+        const prop = document.getElementById('propToggle').classList.contains('active');
+        
+        if (!desc || selected.length === 0) {
+            showToast('Fill description + select who claims');
+            return;
+        }
+        
+        selected.forEach(ent => {
+            expenses.push({
+                id: Date.now() + Math.random(),
+                description: desc + (prop ? ' 🏠' : ''),
+                amount: amount,
+                date: new Date().toISOString().split('T')[0],
+                entities: [ent],
+                propertyRelated: prop,
+                receipt: photoData
+            });
+        });
+        
+        localStorage.setItem('tax2026', JSON.stringify(expenses));
+        showToast(selected.length + ' saved!');
+        
+        // Reset
+        document.getElementById('desc').value = '';
+        document.getElementById('amount').value = '';
+        document.querySelectorAll('.entity-btn').forEach(b => b.classList.remove('selected'));
+        selected = [];
+        document.getElementById('propToggle').classList.remove('active');
+        photoData = null;
+        document.getElementById('photoPreview').style.display = 'none';
+        
+        render();
+    }
+    
+    function render() {
+        const totals = { Jana: 0, Juliano: 0, Urbix: 0, 'NZ Co': 0, Property: 0 };
+        let propCount = 0;
+        
+        expenses.forEach(e => {
+            e.entities.forEach(ent => {
+                if (totals[ent] !== undefined) totals[ent] += e.amount;
+            });
+            if (e.propertyRelated) propCount++;
+        });
+        
+        const total = Object.values(totals).reduce((a,b) => a+b, 0);
+        document.getElementById('total').textContent = '$' + total.toLocaleString();
+        document.getElementById('count').textContent = expenses.length;
+        document.getElementById('props').textContent = propCount;
+        
+        document.getElementById('breakdown').innerHTML = Object.entries(totals)
+            .filter(([_,v]) => v > 0)
+            .map(([k,v]) => `<span style="font-size:0.7rem;padding:4px 8px;background:#f5f5f5;border-radius:20px">${k}: $${v}</span>`)
+            .join('');
+        
+        document.getElementById('expenses').innerHTML = expenses.slice(-5).reverse().map(e => `
+            <div class="expense">
+                <div>
+                    <div class="expense-desc">${e.description}</div>
+                    <div class="expense-meta">${e.date} · ${e.entities.join(', ')}</div>
+                </div>
+                <div class="expense-amt">$${e.amount}</div>
+            </div>
+        `).join('');
+    }
+    
+    function showToast(msg) {
+        const t = document.getElementById('toast');
+        t.textContent = msg;
+        t.classList.add('show');
+        setTimeout(() => t.classList.remove('show'), 2500);
+    }
+    
+    // Register service worker for PWA
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('sw.js');
+    }
+    
+    render();
+    </script>
+</body>
+</html>

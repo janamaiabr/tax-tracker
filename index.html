@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tax Tracker FY26 v2</title>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'DM Sans', sans-serif; background: #f8f9fb; min-height: 100vh; padding: 16px; color: #1a1a2e; }
+        .container { max-width: 480px; margin: 0 auto; }
+        
+        .header { text-align: center; margin-bottom: 16px; }
+        .header h1 { font-size: 1.5rem; font-weight: 700; }
+        .header .fy { font-size: 0.8rem; color: #666; }
+        
+        .tabs { display: flex; gap: 4px; margin-bottom: 16px; background: white; padding: 4px; border-radius: 12px; }
+        .tab { flex: 1; padding: 10px; text-align: center; background: transparent; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 0.8rem; color: #666; }
+        .tab.active { background: #1a1a2e; color: white; }
+        
+        .card { background: white; border-radius: 16px; padding: 16px; margin-bottom: 12px; }
+        
+        .dash-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+        .dash-card { background: #f8f9fb; border-radius: 12px; padding: 14px; text-align: center; }
+        .dash-card.highlight { background: #1a1a2e; }
+        .dash-card.highlight .dash-name { color: rgba(255,255,255,0.7); }
+        .dash-card.highlight .dash-amt { color: #00D084; }
+        .dash-name { font-size: 0.7rem; font-weight: 600; color: #666; text-transform: uppercase; }
+        .dash-amt { font-size: 1.3rem; font-weight: 700; color: #1a1a2e; }
+
+        /* Property Card */
+        .property-card { background: white; border-radius: 16px; padding: 16px; margin-bottom: 12px; border: 2px solid #0D8A86; }
+        .property-card-title { font-size: 0.95rem; font-weight: 700; color: #0D8A86; margin-bottom: 12px; display: flex; align-items: center; gap: 6px; }
+        .property-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px; }
+        .property-stat { background: #f0fafa; border-radius: 10px; padding: 12px; text-align: center; }
+        .property-stat.positive { background: #e8faf3; }
+        .property-stat.negative { background: #fff3f0; }
+        .property-stat-label { font-size: 0.65rem; font-weight: 600; color: #0D8A86; text-transform: uppercase; margin-bottom: 4px; }
+        .property-stat-val { font-size: 1.1rem; font-weight: 700; color: #1a1a2e; }
+        .property-stat-val.green { color: #00D084; }
+        .property-stat-val.red { color: #e05252; }
+        .property-stat-val.teal { color: #0D8A86; }
+        .property-meta { font-size: 0.72rem; color: #666; display: flex; justify-content: space-between; padding-top: 6px; border-top: 1px solid #e0f0f0; }
+
+        /* Action Items Banner */
+        .action-banner { background: #fff8e1; border: 1.5px solid #f5c518; border-radius: 14px; padding: 14px; margin-bottom: 12px; position: relative; }
+        .action-banner-title { font-size: 0.85rem; font-weight: 700; color: #7a5c00; margin-bottom: 8px; }
+        .action-banner ul { padding-left: 18px; }
+        .action-banner li { font-size: 0.78rem; color: #7a5c00; margin-bottom: 4px; line-height: 1.4; }
+        .action-banner-close { position: absolute; top: 10px; right: 12px; background: none; border: none; font-size: 1.1rem; color: #a0800a; cursor: pointer; line-height: 1; }
+        
+        .section-title { font-size: 0.85rem; font-weight: 700; margin-bottom: 10px; display: flex; align-items: center; gap: 6px; }
+        
+        .guide-group { margin-bottom: 16px; }
+        .guide-group-title { font-size: 0.75rem; font-weight: 600; color: #00a866; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px; }
+        .guide-group-title.income-title { color: #0D8A86; }
+        
+        .guide-item { display: flex; align-items: center; gap: 10px; padding: 12px; background: #f8f9fb; border-radius: 10px; margin-bottom: 6px; cursor: pointer; transition: background 0.15s; }
+        .guide-item:hover { background: #f0f3f8; }
+        .guide-item.income-item { background: #f0fafa; }
+        .guide-item.income-item:hover { background: #e0f5f5; }
+        .guide-info { flex: 1; }
+        .guide-name { font-weight: 600; font-size: 0.85rem; }
+        .guide-who { font-size: 0.7rem; color: #666; }
+        
+        .form-group { margin-bottom: 12px; }
+        .form-group label { display: block; font-size: 0.7rem; font-weight: 600; color: #666; margin-bottom: 4px; text-transform: uppercase; }
+        .form-group input, .form-group select { width: 100%; padding: 10px 12px; border: 2px solid #e8e8ec; border-radius: 8px; font-size: 0.9rem; font-family: inherit; }
+        .form-group input:focus { outline: none; border-color: #1a1a2e; }
+        
+        .entity-row { display: flex; gap: 6px; }
+        .entity-btn { flex: 1; padding: 8px; border-radius: 8px; border: 2px solid #e8e8ec; background: white; cursor: pointer; font-size: 0.75rem; font-weight: 600; }
+        .entity-btn.selected { border-color: #1a1a2e; background: #1a1a2e; color: white; }
+        
+        /* Property toggle */
+        .property-toggle { display: flex; align-items: center; gap: 10px; padding: 10px 12px; background: #f0fafa; border: 1.5px solid #b2dede; border-radius: 8px; cursor: pointer; margin-bottom: 12px; }
+        .property-toggle input[type="checkbox"] { width: 18px; height: 18px; accent-color: #0D8A86; cursor: pointer; }
+        .property-toggle-label { font-size: 0.85rem; font-weight: 600; color: #0D8A86; cursor: pointer; }
+        
+        .btn { background: #1a1a2e; color: white; padding: 12px 16px; border-radius: 10px; border: none; font-weight: 600; cursor: pointer; width: 100%; font-size: 0.9rem; }
+        
+        .file-label { display: flex; align-items: center; justify-content: center; gap: 6px; padding: 10px; border: 2px dashed #ccc; border-radius: 8px; cursor: pointer; color: #666; font-size: 0.85rem; }
+        .file-label:hover { border-color: #1a1a2e; }
+        .file-input { display: none; }
+        
+        .expense-row { display: flex; align-items: center; gap: 10px; padding: 12px 0; border-bottom: 1px solid #eee; }
+        .expense-row:last-child { border-bottom: none; }
+        .expense-info { flex: 1; }
+        .expense-desc { font-weight: 600; font-size: 0.85rem; }
+        .expense-meta { font-size: 0.7rem; color: #888; }
+        .expense-amt { font-weight: 700; color: #1a1a2e; }
+        .expense-amt.income { color: #00D084; }
+        .delete-btn { background: none; border: none; color: #ccc; font-size: 1.2rem; cursor: pointer; }
+        
+        .empty { text-align: center; color: #999; padding: 24px; font-size: 0.85rem; }
+        .hidden { display: none; }
+        
+        .info-box { background: #fff8e1; padding: 10px 12px; border-radius: 8px; font-size: 0.75rem; color: #7a6a00; margin-bottom: 12px; }
+        .property-badge { display: inline-block; font-size: 0.65rem; background: #e0f5f5; color: #0D8A86; border-radius: 4px; padding: 1px 5px; margin-left: 4px; font-weight: 600; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🧾 Tax Tracker</h1>
+            <div class="fy">FY26 · 1 Jul 2025 – 30 Jun 2026</div>
+        </div>
+        
+        <div class="tabs">
+            <button class="tab active" data-tab="dashboard" onclick="showTab('dashboard')">📊</button>
+            <button class="tab" data-tab="guide" onclick="showTab('guide')">📋 Guide</button>
+            <button class="tab" data-tab="add" onclick="showTab('add')">➕ Add</button>
+            <button class="tab" data-tab="list" onclick="showTab('list')">📝 All</button>
+        </div>
+        
+        <!-- DASHBOARD -->
+        <div id="tab-dashboard">
+
+            <!-- Action Items Banner -->
+            <div class="action-banner" id="actionBanner">
+                <button class="action-banner-close" onclick="dismissBanner()">✕</button>
+                <div class="action-banner-title">⚡ Action Items</div>
+                <ul>
+                    <li>Order depreciation schedule — Duo Tax <strong>1300 266 386</strong> (~$550)</li>
+                    <li>Keep ALL receipts from 10 April</li>
+                    <li>Get loan interest breakdown from bank</li>
+                    <li>Find accountant before June</li>
+                </ul>
+            </div>
+
+            <div class="card">
+                <div class="dash-grid">
+                    <div class="dash-card highlight">
+                        <div class="dash-name">Total</div>
+                        <div class="dash-amt" id="dash-total">$0</div>
+                    </div>
+                    <div class="dash-card"><div class="dash-name">Jana</div><div class="dash-amt" id="dash-jana">$0</div></div>
+                    <div class="dash-card"><div class="dash-name">Juliano</div><div class="dash-amt" id="dash-juliano">$0</div></div>
+                    <div class="dash-card"><div class="dash-name">Urbix</div><div class="dash-amt" id="dash-urbix">$0</div></div>
+                </div>
+            </div>
+
+            <!-- Property Summary Card -->
+            <div class="property-card">
+                <div class="property-card-title">🏠 11 Central Ave, Nirimba</div>
+                <div class="property-grid">
+                    <div class="property-stat">
+                        <div class="property-stat-label">Rental Income YTD</div>
+                        <div class="property-stat-val green" id="prop-income">$0</div>
+                    </div>
+                    <div class="property-stat">
+                        <div class="property-stat-label">Deductions YTD</div>
+                        <div class="property-stat-val teal" id="prop-deductions">$0</div>
+                    </div>
+                    <div class="property-stat">
+                        <div class="property-stat-label">Net Position</div>
+                        <div class="property-stat-val" id="prop-net">$0</div>
+                    </div>
+                    <div class="property-stat">
+                        <div class="property-stat-label">Est. Tax Refund</div>
+                        <div class="property-stat-val" id="prop-refund">—</div>
+                    </div>
+                </div>
+                <div class="property-meta">
+                    <span>💵 Weekly rent: $740</span>
+                    <span>📅 Rental start: 10 Apr 2026</span>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="section-title">Recent</div>
+                <div id="recentList"></div>
+            </div>
+        </div>
+        
+        <!-- GUIDE -->
+        <div id="tab-guide" class="hidden" style="display:none">
+            <div class="info-box">💡 Click an item to add. Enter YOUR amount.</div>
+            
+            <div class="card">
+
+                <!-- Income Section -->
+                <div class="guide-group">
+                    <div class="guide-group-title income-title">💰 Income</div>
+                    <div class="guide-item income-item" onclick="goToAddIncome('Rental Income ($740/week)', 'Rental Income', ['Jana','Juliano'])">
+                        <div class="guide-info">
+                            <div class="guide-name" style="color:#0D8A86">Rental Income ($740/week)</div>
+                            <div class="guide-who">Jana + Juliano · track weekly rent received</div>
+                        </div>
+                        <span style="color:#0D8A86;font-size:1.1rem">＋</span>
+                    </div>
+                </div>
+
+                <div class="guide-group">
+                    <div class="guide-group-title">📅 Monthly</div>
+                    <div class="guide-item" onclick="goToAdd('Internet', 'Internet', ['Jana'])">
+                        <div class="guide-info"><div class="guide-name">Internet</div><div class="guide-who">Jana · 100%</div></div>
+                    </div>
+                    <div class="guide-item" onclick="goToAdd('Internet', 'Internet', ['Juliano'])">
+                        <div class="guide-info"><div class="guide-name">Internet</div><div class="guide-who">Juliano · 100%</div></div>
+                    </div>
+                    <div class="guide-item" onclick="goToAdd('Mortgage Interest', 'Mortgage Interest', ['Jana','Juliano'])">
+                        <div class="guide-info"><div class="guide-name">Mortgage Interest</div><div class="guide-who">Property · Jana + Juliano each</div></div>
+                    </div>
+                    <div class="guide-item" onclick="goToAdd('Property Management', 'Management Fee', ['Jana','Juliano'])">
+                        <div class="guide-info"><div class="guide-name">Property Management</div><div class="guide-who">8-10% rent</div></div>
+                    </div>
+                    <div class="guide-item" onclick="goToAdd('Software/Subscriptions', 'Software', ['Jana'])">
+                        <div class="guide-info"><div class="guide-name">Software (Figma, Adobe...)</div><div class="guide-who">Jana · 100%</div></div>
+                    </div>
+                    <div class="guide-item" onclick="goToAdd('Landlord Insurance', 'Insurance', ['Jana','Juliano'], true)">
+                        <div class="guide-info"><div class="guide-name">Landlord Insurance</div><div class="guide-who">Jana + Juliano · monthly or annual</div></div>
+                    </div>
+                    <div class="guide-item" onclick="goToAdd('Water Rates', 'Water Rates', ['Jana','Juliano'], true)">
+                        <div class="guide-info"><div class="guide-name">Water Rates</div><div class="guide-who">Jana + Juliano · quarterly</div></div>
+                    </div>
+                    <div class="guide-item" onclick="goToAdd('Body Corp/Strata', 'Body Corp', ['Jana','Juliano'], true)">
+                        <div class="guide-info"><div class="guide-name">Body Corp/Strata</div><div class="guide-who">Jana + Juliano · quarterly</div></div>
+                    </div>
+                </div>
+                
+                <div class="guide-group">
+                    <div class="guide-group-title">📅 Quarterly</div>
+                    <div class="guide-item" onclick="goToAdd('Council Rates', 'Council Rates', ['Jana','Juliano'])">
+                        <div class="guide-info"><div class="guide-name">Council Rates</div><div class="guide-who">QLD · due Apr/Jul/Oct</div></div>
+                    </div>
+                </div>
+                
+                <div class="guide-group">
+                    <div class="guide-group-title">📅 Annually</div>
+                    <div class="guide-item" onclick="goToAdd('Landlord Insurance', 'Insurance', ['Jana','Juliano'])">
+                        <div class="guide-info"><div class="guide-name">Landlord Insurance</div><div class="guide-who">Property</div></div>
+                    </div>
+                    <div class="guide-item" onclick="goToAdd('Engineers Australia', 'Membership', ['Juliano'])">
+                        <div class="guide-info"><div class="guide-name">Engineers Australia</div><div class="guide-who">Juliano · membership</div></div>
+                    </div>
+                    <div class="guide-item" onclick="goToAdd('MBA / Education', 'Education', ['Jana'])">
+                        <div class="guide-info"><div class="guide-name">MBA / Education</div><div class="guide-who">Jana · courses</div></div>
+                    </div>
+                    <div class="guide-item" onclick="goToAdd('Professional Development', 'Education', ['Juliano'])">
+                        <div class="guide-info"><div class="guide-name">Professional Development</div><div class="guide-who">Juliano · courses</div></div>
+                    </div>
+                    <div class="guide-item" onclick="goToAdd('Depreciation Schedule', 'Depreciation (Building)', ['Jana','Juliano'], true)">
+                        <div class="guide-info"><div class="guide-name">Depreciation Schedule</div><div class="guide-who">Quantity Surveyor</div></div>
+                    </div>
+                </div>
+                
+                <div class="guide-group">
+                    <div class="guide-group-title">📅 If Applicable</div>
+                    <div class="guide-item" onclick="goToAdd('CFD Trading Loss', 'Trading Loss', ['Juliano'])">
+                        <div class="guide-info"><div class="guide-name">CFD Trading Loss</div><div class="guide-who">Juliano · offset income</div></div>
+                    </div>
+                    <div class="guide-item" onclick="goToAdd('Maintenance/Repairs', 'Maintenance', ['Jana','Juliano'])">
+                        <div class="guide-info"><div class="guide-name">Maintenance/Repairs</div><div class="guide-who">Property</div></div>
+                    </div>
+                    <div class="guide-item" onclick="goToAdd('Home Office Equipment', 'Equipment', ['Jana'])">
+                        <div class="guide-info"><div class="guide-name">Home Office Equipment</div><div class="guide-who">Jana · desk, chair...</div></div>
+                    </div>
+                    <div class="guide-item" onclick="goToAdd('Home Office Equipment', 'Equipment', ['Juliano'])">
+                        <div class="guide-info"><div class="guide-name">Home Office Equipment</div><div class="guide-who">Juliano · desk, chair...</div></div>
+                    </div>
+                    <div class="guide-item" onclick="goToAdd('Repairs', 'Repairs', ['Jana','Juliano'], true)">
+                        <div class="guide-info"><div class="guide-name">Repairs</div><div class="guide-who">Jana + Juliano · property repairs</div></div>
+                    </div>
+                    <div class="guide-item" onclick="goToAdd('Pest Inspection', 'Pest Control', ['Jana','Juliano'], true)">
+                        <div class="guide-info"><div class="guide-name">Pest Inspection</div><div class="guide-who">Jana + Juliano</div></div>
+                    </div>
+                    <div class="guide-item" onclick="goToAdd('Advertising for Tenants', 'Advertising', ['Jana','Juliano'], true)">
+                        <div class="guide-info"><div class="guide-name">Advertising for Tenants</div><div class="guide-who">Jana + Juliano</div></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- ADD -->
+        <div id="tab-add" class="hidden" style="display:none">
+            <div class="card">
+                <div class="form-group">
+                    <label>What did you pay for?</label>
+                    <input type="text" id="desc" placeholder="e.g. Internet, Mortgage...">
+                </div>
+                <div class="form-group">
+                    <label>Amount ($)</label>
+                    <input type="number" id="amt" placeholder="0.00">
+                </div>
+                <div class="form-group">
+                    <label>Date</label>
+                    <input type="date" id="date">
+                </div>
+                <div class="form-group">
+                    <label>Category</label>
+                    <select id="cat">
+                        <option value="Home Office">Home Office</option>
+                        <option value="Internet">Internet</option>
+                        <option value="Phone">Phone</option>
+                        <option value="Software">Software</option>
+                        <option value="Equipment">Equipment</option>
+                        <option value="Education">Education</option>
+                        <option value="Membership">Membership</option>
+                        <option value="Insurance">Insurance</option>
+                        <option value="Mortgage Interest">Mortgage Interest</option>
+                        <option value="Council Rates">Council Rates</option>
+                        <option value="Land Tax">Land Tax</option>
+                        <option value="Maintenance">Maintenance</option>
+                        <option value="Management Fee">Management Fee</option>
+                        <option value="Depreciation">Depreciation</option>
+                        <option value="Trading Loss">Trading Loss</option>
+                        <option value="Water Rates">Water Rates</option>
+                        <option value="Body Corp">Body Corp</option>
+                        <option value="Repairs">Repairs</option>
+                        <option value="Depreciation (Building)">Depreciation (Building)</option>
+                        <option value="Depreciation (Plant)">Depreciation (Plant)</option>
+                        <option value="Advertising">Advertising</option>
+                        <option value="Pest Control">Pest Control</option>
+                        <option value="Rental Income">Rental Income</option>
+                        <option value="Other">Other</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Who claims 100%?</label>
+                    <div class="entity-row">
+                        <button class="entity-btn" onclick="toggleEntity(this, 'Jana')">Jana</button>
+                        <button class="entity-btn" onclick="toggleEntity(this, 'Juliano')">Juliano</button>
+                        <button class="entity-btn" onclick="toggleEntity(this, 'Urbix')">Urbix</button>
+                        <button class="entity-btn" onclick="toggleEntity(this, 'NZ')">NZ</button>
+                    </div>
+                </div>
+
+                <!-- Property expense toggle -->
+                <label class="property-toggle" for="propertyCheck">
+                    <input type="checkbox" id="propertyCheck">
+                    <span class="property-toggle-label">🏠 Property expense? (11 Central Ave)</span>
+                </label>
+
+                <div class="form-group">
+                    <label>Receipt (optional)</label>
+                    <label class="file-label" for="receiptFile">📎 Attach receipt</label>
+                    <input type="file" id="receiptFile" class="file-input" accept="image/*,.pdf">
+                </div>
+                <button class="btn" onclick="addExpense()">Add</button>
+            </div>
+        </div>
+        
+        <!-- LIST -->
+        <div id="tab-list" class="hidden" style="display:none">
+            <div class="card"><div id="allList"></div></div>
+        </div>
+    </div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+const supabaseUrl = 'https://fxjtwbnmumdsqoajbzun.supabase.co';
+const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ4anR3Ym5tdW1kc3FvYWpienVuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzExNjA2ODYsImV4cCI6MjA4NjczNjY4Nn0.pvYrEJSKc7LjCzYYGu7mt0ZXUt7ktPShfvxMostkTkc';
+const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+
+let selectedEntities = [];
+let expenses = JSON.parse(localStorage.getItem('taxExp2026') || '[]');
+
+// Action banner
+function dismissBanner() {
+    localStorage.setItem('actionBannerDismissed', '1');
+    const el = document.getElementById('actionBanner');
+    if(el) el.style.display = 'none';
+}
+if(localStorage.getItem('actionBannerDismissed') === '1') {
+    document.addEventListener('DOMContentLoaded', () => {
+        const el = document.getElementById('actionBanner');
+        if(el) el.style.display = 'none';
+    });
+    // Also apply immediately if DOM ready
+    const el = document.getElementById('actionBanner');
+    if(el) el.style.display = 'none';
+}
+
+function showTab(tab) {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelector(`.tab[data-tab="${tab}"]`).classList.add('active');
+    ['dashboard','guide','add','list'].forEach(id => {
+        const el = document.getElementById('tab-' + id);
+        if(id === tab) { el.classList.remove('hidden'); el.style.display = ''; }
+        else { el.classList.add('hidden'); el.style.display = 'none'; }
+    });
+    if(tab === 'dashboard') renderDashboard();
+    if(tab === 'list') renderAll();
+}
+
+function goToAdd(desc, cat, entities, isProperty) {
+    document.getElementById('desc').value = desc;
+    // Set category if it exists
+    const catSelect = document.getElementById('cat');
+    for(let i = 0; i < catSelect.options.length; i++) {
+        if(catSelect.options[i].value === cat) { catSelect.selectedIndex = i; break; }
+    }
+    document.querySelectorAll('.entity-btn').forEach(b => b.classList.remove('selected'));
+    selectedEntities = entities;
+    entities.forEach(ent => {
+        document.querySelectorAll('.entity-btn').forEach(b => {
+            if(b.textContent === ent) b.classList.add('selected');
+        });
+    });
+    document.getElementById('propertyCheck').checked = !!isProperty;
+    showTab('add');
+    document.getElementById('amt').focus();
+}
+
+function goToAddIncome(desc, cat, entities) {
+    document.getElementById('desc').value = desc;
+    const catSelect = document.getElementById('cat');
+    for(let i = 0; i < catSelect.options.length; i++) {
+        if(catSelect.options[i].value === cat) { catSelect.selectedIndex = i; break; }
+    }
+    document.querySelectorAll('.entity-btn').forEach(b => b.classList.remove('selected'));
+    selectedEntities = entities;
+    entities.forEach(ent => {
+        document.querySelectorAll('.entity-btn').forEach(b => {
+            if(b.textContent === ent) b.classList.add('selected');
+        });
+    });
+    document.getElementById('propertyCheck').checked = true;
+    showTab('add');
+    document.getElementById('amt').focus();
+}
+
+function toggleEntity(btn, entity) {
+    btn.classList.toggle('selected');
+    selectedEntities = selectedEntities.includes(entity) 
+        ? selectedEntities.filter(e => e !== entity) 
+        : [...selectedEntities, entity];
+}
+
+function save() {
+    localStorage.setItem('taxExp2026', JSON.stringify(expenses));
+    renderDashboard();
+}
+
+function addExpense() {
+    const desc = document.getElementById('desc').value.trim();
+    const amt = parseFloat(document.getElementById('amt').value) || 0;
+    const date = document.getElementById('date').value || new Date().toISOString().split('T')[0];
+    const cat = document.getElementById('cat').value;
+    const propertyRelated = document.getElementById('propertyCheck').checked;
+    const receiptFile = document.getElementById('receiptFile').files[0];
+    
+    if(!desc || selectedEntities.length === 0) {
+        alert('Enter description + select who claims');
+        return;
+    }
+    
+    const expense = {
+        id: Date.now(),
+        desc,
+        amount: amt,
+        date,
+        category: cat,
+        entities: [...selectedEntities],
+        propertyRelated: propertyRelated,
+        receiptName: null,
+        receiptUrl: null
+    };
+    
+    if(receiptFile) {
+        supabase.storage.from('tax-receipts').upload(expense.id + '_' + receiptFile.name, receiptFile)
+        .then(({data, error}) => {
+            if(!error) {
+                expense.receiptName = receiptFile.name;
+                expense.receiptUrl = supabaseUrl + '/storage/v1/object/public/tax-receipts/' + expense.id + '_' + receiptFile.name;
+            }
+            saveExpense(expense);
+        });
+    } else {
+        saveExpense(expense);
+    }
+}
+
+function saveExpense(expense) {
+    expenses.push(expense);
+    save();
+    document.getElementById('desc').value = '';
+    document.getElementById('amt').value = '';
+    document.getElementById('receiptFile').value = '';
+    document.getElementById('propertyCheck').checked = false;
+    document.querySelectorAll('.entity-btn').forEach(b => b.classList.remove('selected'));
+    selectedEntities = [];
+    showTab('dashboard');
+}
+
+function deleteExpense(id) {
+    if(confirm('Delete?')) {
+        expenses = expenses.filter(e => e.id !== id);
+        save();
+        renderAll();
+    }
+}
+
+function fmt(n) {
+    return '$' + Math.abs(n).toLocaleString('en-AU', {minimumFractionDigits: 0, maximumFractionDigits: 0});
+}
+
+function renderDashboard() {
+    const totals = { Jana: 0, Juliano: 0, Urbix: 0 };
+    let propIncome = 0;
+    let propDeductions = 0;
+
+    expenses.forEach(e => {
+        const isIncome = e.category === 'Rental Income';
+        if(!isIncome) {
+            // Only count non-income in expense totals
+            e.entities.forEach(ent => totals[ent] = (totals[ent] || 0) + e.amount);
+        }
+
+        // Property summary
+        if(e.propertyRelated) {
+            if(isIncome) {
+                propIncome += e.amount;
+            } else {
+                propDeductions += e.amount;
+            }
+        }
+    });
+
+    const total = Object.values(totals).reduce((a,b) => a + b, 0);
+    document.getElementById('dash-total').textContent = fmt(total);
+    document.getElementById('dash-jana').textContent = fmt(totals.Jana || 0);
+    document.getElementById('dash-juliano').textContent = fmt(totals.Juliano || 0);
+    document.getElementById('dash-urbix').textContent = fmt(totals.Urbix || 0);
+
+    // Property card
+    const netPosition = propIncome - propDeductions;
+    const estRefund = netPosition < 0 ? Math.abs(netPosition) * 0.47 : 0;
+
+    document.getElementById('prop-income').textContent = fmt(propIncome);
+    document.getElementById('prop-deductions').textContent = fmt(propDeductions);
+
+    const netEl = document.getElementById('prop-net');
+    netEl.textContent = (netPosition >= 0 ? '' : '-') + fmt(netPosition);
+    netEl.className = 'property-stat-val ' + (netPosition >= 0 ? 'green' : 'red');
+
+    const refundEl = document.getElementById('prop-refund');
+    if(estRefund > 0) {
+        refundEl.textContent = fmt(estRefund);
+        refundEl.className = 'property-stat-val green';
+    } else if(netPosition > 0) {
+        refundEl.textContent = 'Taxable';
+        refundEl.className = 'property-stat-val red';
+    } else {
+        refundEl.textContent = '—';
+        refundEl.className = 'property-stat-val teal';
+    }
+
+    const recent = expenses.slice(-5).reverse();
+    document.getElementById('recentList').innerHTML = recent.length ? recent.map(e => {
+        const isIncome = e.category === 'Rental Income';
+        return `
+        <div class="expense-row">
+            <div class="expense-info">
+                <div class="expense-desc">${e.desc}${e.propertyRelated ? '<span class="property-badge">🏠</span>' : ''}</div>
+                <div class="expense-meta">${e.date} · ${e.entities.join(', ')}</div>
+            </div>
+            <div class="expense-amt${isIncome ? ' income' : ''}">${isIncome ? '+' : ''}$${e.amount}</div>
+            <button class="delete-btn" onclick="deleteExpense(${e.id})">×</button>
+        </div>
+    `;}).join('') : '<div class="empty">No expenses yet</div>';
+}
+
+function renderAll() {
+    const sorted = [...expenses].sort((a,b) => new Date(b.date) - new Date(a.date));
+    document.getElementById('allList').innerHTML = sorted.length ? sorted.map(e => {
+        const isIncome = e.category === 'Rental Income';
+        return `
+        <div class="expense-row">
+            <div class="expense-info">
+                <div class="expense-desc">${e.desc}${e.propertyRelated ? '<span class="property-badge">🏠</span>' : ''}</div>
+                <div class="expense-meta">${e.date} · ${e.category} · ${e.entities.map(en => en + ' (100%)').join(', ')}</div>
+                ${e.receiptUrl ? '<a href="' + e.receiptUrl + '" target="_blank" style="font-size:0.7rem;color:#00a866">📎 Receipt</a>' : ''}
+            </div>
+            <div class="expense-amt${isIncome ? ' income' : ''}">${isIncome ? '+' : ''}$${e.amount}</div>
+            <button class="delete-btn" onclick="deleteExpense(${e.id})">×</button>
+        </div>
+    `;}).join('') : '<div class="empty">No expenses</div>';
+}
+
+document.getElementById('date').value = new Date().toISOString().split('T')[0];
+renderDashboard();
+</script>
+</body>
+</html>

@@ -1,0 +1,844 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#fafafa">
+    <title>Tax Tracker 2026</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #fafafa;
+            --bg-secondary: #f5f5f3;
+            --bg-card: #ffffff;
+            --bg-elevated: #ffffff;
+            --accent: #1a1a1a;
+            --accent-light: #f0f0f0;
+            --accent-subtle: rgba(26, 26, 26, 0.08);
+            --text-primary: #1a1a1a;
+            --text-secondary: #6b6b6b;
+            --text-tertiary: #9ca3af;
+            --border: #e5e5e3;
+            --border-subtle: #f0f0f0;
+            --success: #059669;
+            --gradient: linear-gradient(135deg, #1a1a1a 0%, #404040 100%);
+        }
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        
+        html, body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            -webkit-font-smoothing: antialiased;
+        }
+        
+        body {
+            background: 
+                radial-gradient(ellipse at 0% 0%, rgba(26, 26, 26, 0.03) 0%, transparent 50%),
+                var(--bg-primary);
+        }
+        
+        .app { max-width: 420px; margin: 0 auto; min-height: 100vh; padding-bottom: 90px; }
+        
+        /* Header */
+        .header {
+            padding: 32px 24px 20px;
+            background: var(--bg-primary);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        
+        .header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin-bottom: 24px;
+        }
+        
+        .logo {
+            font-family: 'Inter', -apple-system, sans-serif;
+            font-size: 1.75rem;
+            font-weight: 400;
+            letter-spacing: -0.02em;
+        }
+        
+        .year-badge {
+            font-size: 0.8rem;
+            color: var(--text-tertiary);
+            font-weight: 500;
+        }
+        
+        /* Stats */
+        .stat-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 12px;
+            transition: all 0.2s ease;
+        }
+        
+        .stat-card.main {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .stat-card.main::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: var(--gradient);
+        }
+        
+        .stat-label {
+            font-size: 0.7rem;
+            color: var(--text-tertiary);
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            margin-bottom: 6px;
+            font-weight: 500;
+        }
+        
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 600;
+            letter-spacing: -0.03em;
+            font-family: 'JetBrains Mono', monospace;
+        }
+        
+        .stat-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+        
+        .stat-breakdown {
+            display: flex;
+            gap: 6px;
+            margin-top: 12px;
+            flex-wrap: wrap;
+        }
+        
+        .breakdown-tag {
+            font-size: 0.65rem;
+            padding: 4px 10px;
+            background: var(--bg-secondary);
+            border-radius: 20px;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+        
+        /* Navigation */
+        .nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: var(--bg-elevated);
+            border-top: 1px solid var(--border);
+            padding: 10px 16px;
+            padding-bottom: max(10px, env(safe-area-inset-bottom));
+            z-index: 100;
+        }
+        
+        .nav-inner {
+            display: flex;
+            justify-content: space-around;
+            max-width: 420px;
+            margin: 0 auto;
+        }
+        
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 2px;
+            padding: 8px 20px;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            background: transparent;
+            border: none;
+            color: var(--text-tertiary);
+            font-size: 0.65rem;
+            font-family: inherit;
+            font-weight: 500;
+        }
+        
+        .nav-item.active {
+            color: var(--text-primary);
+            background: var(--accent-light);
+        }
+        
+        .nav-item:active { transform: scale(0.97); }
+        
+        .nav-icon { font-size: 1.3rem; margin-bottom: 2px; }
+        
+        /* Screens */
+        .screen { display: none; padding: 0 20px 20px; }
+        .screen.active { display: block; }
+        
+        .section-title {
+            font-size: 0.7rem;
+            color: var(--text-tertiary);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            margin-bottom: 16px;
+            font-weight: 500;
+        }
+        
+        /* Expense Items */
+        .expense-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            margin-bottom: 8px;
+        }
+        
+        .expense-left { display: flex; align-items: center; gap: 14px; }
+        
+        .expense-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+            background: var(--bg-secondary);
+        }
+        
+        .expense-desc {
+            font-weight: 500;
+            font-size: 0.9rem;
+            color: var(--text-primary);
+        }
+        
+        .expense-meta {
+            font-size: 0.7rem;
+            color: var(--text-tertiary);
+            margin-top: 2px;
+        }
+        
+        .expense-amount {
+            font-weight: 600;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.9rem;
+            color: var(--text-primary);
+        }
+        
+        /* Form */
+        .form-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 24px;
+        }
+        
+        .form-group { margin-bottom: 20px; }
+        
+        .form-label {
+            display: block;
+            font-size: 0.7rem;
+            color: var(--text-tertiary);
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            margin-bottom: 10px;
+            font-weight: 500;
+        }
+        
+        .form-input {
+            width: 100%;
+            padding: 14px 16px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            color: var(--text-primary);
+            font-size: 0.95rem;
+            font-family: inherit;
+            transition: all 0.2s ease;
+        }
+        
+        .form-input:focus {
+            outline: none;
+            border-color: var(--accent);
+            background: var(--bg-card);
+        }
+        
+        .form-input::placeholder { color: var(--text-tertiary); }
+        
+        /* Entity Buttons */
+        .entity-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+        }
+        
+        .entity-btn {
+            padding: 12px 8px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            color: var(--text-secondary);
+            font-weight: 500;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            font-family: inherit;
+        }
+        
+        .entity-btn.selected {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: white;
+        }
+        
+        .entity-btn:active { transform: scale(0.97); }
+        
+        /* Toggle */
+        .toggle-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 14px 16px;
+            background: var(--bg-secondary);
+            border-radius: 10px;
+            margin-top: 16px;
+        }
+        
+        .toggle-label { font-weight: 500; font-size: 0.9rem; }
+        
+        .toggle {
+            width: 44px;
+            height: 24px;
+            background: var(--border);
+            border-radius: 12px;
+            position: relative;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .toggle.active { background: var(--accent); }
+        
+        .toggle::after {
+            content: '';
+            position: absolute;
+            width: 18px;
+            height: 18px;
+            background: white;
+            border-radius: 50%;
+            top: 3px;
+            left: 3px;
+            transition: all 0.3s ease;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        
+        .toggle.active::after { left: 23px; }
+        
+        /* Camera */
+        .camera-btn {
+            width: 100%;
+            padding: 16px;
+            background: var(--bg-secondary);
+            border: 1px dashed var(--border);
+            border-radius: 10px;
+            color: var(--text-tertiary);
+            font-size: 0.85rem;
+            cursor: pointer;
+            margin-top: 16px;
+            transition: all 0.2s ease;
+            font-family: inherit;
+        }
+        
+        .camera-btn:active { transform: scale(0.98); }
+        
+        /* Submit */
+        .submit-btn {
+            width: 100%;
+            padding: 16px;
+            background: var(--accent);
+            border: none;
+            border-radius: 12px;
+            color: white;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 24px;
+            transition: all 0.2s ease;
+            font-family: inherit;
+        }
+        
+        .submit-btn:active { transform: scale(0.98); }
+        
+        /* Empty */
+        .empty-state {
+            text-align: center;
+            padding: 48px 20px;
+            color: var(--text-tertiary);
+        }
+        
+        .empty-icon { font-size: 2.5rem; margin-bottom: 12px; opacity: 0.4; }
+        
+        /* Filters */
+        .filter-pills {
+            display: flex;
+            gap: 8px;
+            overflow-x: auto;
+            padding-bottom: 12px;
+            margin-bottom: 16px;
+            -webkit-overflow-scrolling: touch;
+        }
+        
+        .filter-pill {
+            padding: 8px 14px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            white-space: nowrap;
+            cursor: pointer;
+            font-family: inherit;
+            font-weight: 500;
+        }
+        
+        .filter-pill.active {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: white;
+        }
+        
+        /* Backup */
+        .backup-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 16px;
+        }
+        
+        .backup-btn {
+            width: 100%;
+            padding: 14px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            color: var(--text-primary);
+            font-size: 0.9rem;
+            font-weight: 500;
+            cursor: pointer;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            font-family: inherit;
+        }
+        
+        .backup-btn:active { transform: scale(0.98); }
+        
+        .backup-btn.primary {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: white;
+        }
+        
+        /* Toast */
+        .toast {
+            position: fixed;
+            bottom: 90px;
+            left: 50%;
+            transform: translateX(-50%) translateY(20px);
+            background: var(--accent);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 10px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            opacity: 0;
+            transition: all 0.3s ease;
+            z-index: 200;
+        }
+        
+        .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+        
+        #video { display: none; width: 100%; border-radius: 10px; margin-top: 12px; }
+        #canvas { display: none; }
+        
+        .list-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+            padding: 0 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="app">
+        <div class="header">
+            <div class="header-top">
+                <div class="logo">Tax Tracker</div>
+                <div class="year-badge">2026</div>
+            </div>
+            
+            <div class="stat-card main">
+                <div class="stat-label">Total Deductions</div>
+                <div class="stat-value" id="totalAmount">$0</div>
+                <div class="stat-breakdown" id="breakdown"></div>
+            </div>
+            
+            <div class="stat-row">
+                <div class="stat-card">
+                    <div class="stat-label">Items</div>
+                    <div class="stat-value" id="itemCount" style="font-size: 1.4rem;">0</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Properties</div>
+                    <div class="stat-value" id="propCount" style="font-size: 1.4rem;">0</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="screen active" id="screen-dash">
+            <div class="section-title" style="margin-top: 8px;">Recent</div>
+            <div id="recentExpenses">
+                <div class="empty-state">
+                    <div class="empty-icon">📝</div>
+                    <p style="font-size: 0.9rem; color: var(--text-secondary);">No expenses yet</p>
+                    <p style="font-size: 0.75rem; margin-top: 6px;">Add your first deduction</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="screen" id="screen-add">
+            <div class="form-card">
+                <div class="form-group">
+                    <label class="form-label">Description</label>
+                    <input type="text" class="form-input" id="inputDesc" placeholder="Internet, Council Rates...">
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Amount</label>
+                    <input type="number" class="form-input" id="inputAmount" placeholder="0.00" inputmode="decimal">
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Who Claims?</label>
+                    <div class="entity-grid" id="entityGrid">
+                        <button class="entity-btn" data-entity="Jana">Jana</button>
+                        <button class="entity-btn" data-entity="Juliano">Juliano</button>
+                        <button class="entity-btn" data-entity="Urbix">Urbix</button>
+                        <button class="entity-btn" data-entity="NZ Co">NZ Co</button>
+                        <button class="entity-btn" data-entity="Property">Property</button>
+                    </div>
+                </div>
+                
+                <div class="toggle-row">
+                    <span class="toggle-label">Property Related</span>
+                    <div class="toggle" id="propToggle"></div>
+                </div>
+                
+                <button class="camera-btn" id="cameraBtn" onclick="startCamera()">
+                    📷 Add Receipt Photo
+                </button>
+                <video id="video" autoplay playsinline></video>
+                <canvas id="canvas"></canvas>
+                <img id="photoPreview" style="display:none; width:100%; border-radius:10px; margin-top:12px;">
+                
+                <button class="submit-btn" onclick="saveExpense()">Save Deduction</button>
+            </div>
+        </div>
+        
+        <div class="screen" id="screen-list">
+            <div class="list-header">
+                <div class="section-title" style="margin:0">All Expenses</div>
+            </div>
+            <div class="filter-pills" id="filterPills">
+                <button class="filter-pill active" data-filter="all">All</button>
+                <button class="filter-pill" data-filter="Jana">Jana</button>
+                <button class="filter-pill" data-filter="Juliano">Juliano</button>
+                <button class="filter-pill" data-filter="Urbix">Urbix</button>
+                <button class="filter-pill" data-filter="NZ Co">NZ Co</button>
+                <button class="filter-pill" data-filter="Property">Property</button>
+            </div>
+            <div id="expenseList"></div>
+        </div>
+        
+        <div class="screen" id="screen-backup">
+            <div class="backup-card">
+                <div class="section-title" style="margin-bottom: 16px;">Export / Import</div>
+                <button class="backup-btn primary" onclick="exportCSV()">
+                    📥 Export CSV
+                </button>
+                <button class="backup-btn" onclick="document.getElementById('importFile').click()">
+                    📤 Import CSV
+                </button>
+                <input type="file" id="importFile" accept=".csv" style="display:none" onchange="importCSV(this)">
+            </div>
+            
+            <div class="backup-card">
+                <div class="section-title" style="margin-bottom: 12px;">Sync</div>
+                <p style="color: var(--text-secondary); font-size: 0.85rem;">
+                    Data saved locally on this device
+                </p>
+            </div>
+        </div>
+        
+        <nav class="nav">
+            <div class="nav-inner">
+                <button class="nav-item active" data-screen="dash">
+                    <span class="nav-icon">📊</span>
+                    <span>Dashboard</span>
+                </button>
+                <button class="nav-item" data-screen="add">
+                    <span class="nav-icon">➕</span>
+                    <span>Add</span>
+                </button>
+                <button class="nav-item" data-screen="list">
+                    <span class="nav-icon">📋</span>
+                    <span>List</span>
+                </button>
+                <button class="nav-item" data-screen="backup">
+                    <span class="nav-icon">💾</span>
+                    <span>Backup</span>
+                </button>
+            </div>
+        </nav>
+    </div>
+    
+    <div class="toast" id="toast">Saved!</div>
+    
+    <script>
+    let expenses = JSON.parse(localStorage.getItem('tax2026') || '[]');
+    let selectedEntities = [];
+    let propertyRelated = false;
+    let photoData = null;
+    let stream = null;
+    let currentFilter = 'all';
+    
+    const screens = document.querySelectorAll('.screen');
+    const navItems = document.querySelectorAll('.nav-item');
+    const entityBtns = document.querySelectorAll('.entity-btn');
+    const filterPills = document.querySelectorAll('.filter-pill');
+    const propToggle = document.getElementById('propToggle');
+    
+    navItems.forEach(item => {
+        item.addEventListener('click', () => {
+            const screen = item.dataset.screen;
+            showScreen(screen);
+        });
+    });
+    
+    function showScreen(name) {
+        screens.forEach(s => s.classList.remove('active'));
+        navItems.forEach(n => n.classList.remove('active'));
+        document.getElementById('screen-' + name).classList.add('active');
+        document.querySelector(`[data-screen="${name}"]`).classList.add('active');
+        if (name === 'dash' || name === 'list') render();
+    }
+    
+    entityBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            btn.classList.toggle('selected');
+            const entity = btn.dataset.entity;
+            if (selectedEntities.includes(entity)) {
+                selectedEntities = selectedEntities.filter(e => e !== entity);
+            } else {
+                selectedEntities.push(entity);
+            }
+        });
+    });
+    
+    propToggle.addEventListener('click', () => {
+        propToggle.classList.toggle('active');
+        propertyRelated = propToggle.classList.contains('active');
+    });
+    
+    filterPills.forEach(pill => {
+        pill.addEventListener('click', () => {
+            filterPills.forEach(p => p.classList.remove('active'));
+            pill.classList.add('active');
+            currentFilter = pill.dataset.filter;
+            renderList();
+        });
+    });
+    
+    async function startCamera() {
+        try {
+            stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+            const video = document.getElementById('video');
+            video.srcObject = stream;
+            video.style.display = 'block';
+            document.getElementById('cameraBtn').style.display = 'none';
+            
+            video.onloadedmetadata = () => {
+                const canvas = document.getElementById('canvas');
+                canvas.width = video.videoWidth;
+                canvas.height = video.videoHeight;
+                canvas.getContext('2d').drawImage(video, 0, 0);
+                photoData = canvas.toDataURL('image/jpeg', 0.7);
+                document.getElementById('photoPreview').src = photoData;
+                document.getElementById('photoPreview').style.display = 'block';
+                stream.getTracks().forEach(track => track.stop());
+                video.style.display = 'none';
+            };
+        } catch(e) {
+            showToast('Camera not available');
+        }
+    }
+    
+    function saveExpense() {
+        const desc = document.getElementById('inputDesc').value.trim();
+        const amount = parseFloat(document.getElementById('inputAmount').value) || 0;
+        
+        if (!desc || selectedEntities.length === 0) {
+            showToast('Fill description + select who claims');
+            return;
+        }
+        
+        selectedEntities.forEach(entity => {
+            expenses.push({
+                id: Date.now() + Math.random(),
+                description: desc + (propertyRelated ? ' 🏠' : ''),
+                amount: amount,
+                date: new Date().toISOString().split('T')[0],
+                entities: [entity],
+                propertyRelated: propertyRelated,
+                receipt: photoData
+            });
+        });
+        
+        localStorage.setItem('tax2026', JSON.stringify(expenses));
+        showToast(selectedEntities.length + ' expense(s) saved!');
+        
+        document.getElementById('inputDesc').value = '';
+        document.getElementById('inputAmount').value = '';
+        selectedEntities.forEach(e => document.querySelector(`[data-entity="${e}"]`).classList.remove('selected'));
+        selectedEntities = [];
+        propertyRelated = false;
+        propToggle.classList.remove('active');
+        photoData = null;
+        document.getElementById('photoPreview').style.display = 'none';
+        document.getElementById('cameraBtn').style.display = 'block';
+        
+        showScreen('dash');
+    }
+    
+    function render() {
+        const totals = { Jana: 0, Juliano: 0, Urbix: 0, 'NZ Co': 0, Property: 0 };
+        let propCount = 0;
+        
+        expenses.forEach(e => {
+            e.entities.forEach(ent => {
+                if (totals[ent] !== undefined) totals[ent] += e.amount;
+            });
+            if (e.propertyRelated) propCount++;
+        });
+        
+        const total = Object.values(totals).reduce((a, b) => a + b, 0);
+        
+        document.getElementById('totalAmount').textContent = '$' + total.toLocaleString();
+        document.getElementById('itemCount').textContent = expenses.length;
+        document.getElementById('propCount').textContent = propCount;
+        
+        const breakdown = document.getElementById('breakdown');
+        breakdown.innerHTML = Object.entries(totals)
+            .filter(([_, v]) => v > 0)
+            .map(([k, v]) => `<span class="breakdown-tag">${k}: $${v.toLocaleString()}</span>`)
+            .join('');
+        
+        renderList();
+    }
+    
+    function renderList() {
+        const container = currentFilter === 'all' 
+            ? document.getElementById('recentExpenses')
+            : document.getElementById('expenseList');
+        
+        let filtered = currentFilter === 'all' 
+            ? expenses.slice(-10).reverse()
+            : expenses.filter(e => e.entities.includes(currentFilter)).reverse();
+        
+        if (filtered.length === 0) {
+            container.innerHTML = '<div class="empty-state"><div class="empty-icon">📝</div><p style="font-size:0.9rem;color:var(--text-secondary)">No expenses found</p></div>';
+            return;
+        }
+        
+        container.innerHTML = filtered.map(e => `
+            <div class="expense-item">
+                <div class="expense-left">
+                    <div class="expense-icon">${e.propertyRelated ? '🏠' : '💰'}</div>
+                    <div>
+                        <div class="expense-desc">${e.description}</div>
+                        <div class="expense-meta">${e.date} · ${e.entities.join(', ')}</div>
+                    </div>
+                </div>
+                <div class="expense-amount">$${e.amount.toLocaleString()}</div>
+            </div>
+        `).join('');
+    }
+    
+    function exportCSV() {
+        const rows = expenses.map(e => [e.date, e.description, e.amount, e.entities.join(';'), e.propertyRelated]);
+        const csv = ['Date,Description,Amount,Entities,Property', ...rows.map(r => r.join(','))].join('\n');
+        const blob = new Blob([csv], { type: 'text/csv' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'tax-2026.csv';
+        a.click();
+        showToast('CSV exported!');
+    }
+    
+    function importCSV(input) {
+        const file = input.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const lines = e.target.result.split('\n');
+            for (let i = 1; i < lines.length; i++) {
+                const cols = lines[i].split(',');
+                if (cols.length >= 3) {
+                    expenses.push({
+                        id: Date.now() + i,
+                        description: cols[1],
+                        amount: parseFloat(cols[2]) || 0,
+                        date: cols[0],
+                        entities: cols[3]?.split(';') || [],
+                        propertyRelated: cols[4] === 'true'
+                    });
+                }
+            }
+            localStorage.setItem('tax2026', JSON.stringify(expenses));
+            showToast('Imported!');
+            render();
+        };
+        reader.readAsText(file);
+    }
+    
+    function showToast(msg) {
+        const toast = document.getElementById('toast');
+        toast.textContent = msg;
+        toast.classList.add('show');
+        setTimeout(() => toast.classList.remove('show'), 2500);
+    }
+    
+    render();
+    </script>
+</body>
+</html>

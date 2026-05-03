@@ -1,0 +1,959 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#1a1a2e">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🧾</text></svg>">
+    <link rel="manifest" href="data:application/json,{&#34;name&#34;:&#34;Tax Tracker FY26&#34;,&#34;short_name&#34;:&#34;Tax&#34;,&#34;start_url&#34;:&#34;/?utm_source=pwa&#34;,&#34;display&#34;:&#34;standalone&#34;,&#34;background_color&#34;:&#34;#f8f9fb&#34;,&#34;theme_color&#34;:&#34;#1a1a2e&#34;}">
+    <title>Tax Tracker FY26</title>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'DM Sans', sans-serif; background: #f8f9fb; min-height: 100vh; padding: 16px; color: #1a1a2e; }
+        .container { max-width: 480px; margin: 0 auto; }
+        
+        .header { text-align: center; margin-bottom: 16px; }
+        .header h1 { font-size: 1.5rem; font-weight: 700; }
+        .header .fy { font-size: 0.8rem; color: #666; }
+        
+/* Mobile-friendly tabs */
+        .tab { flex: 1; min-width: 70px; padding: 14px 10px; text-align: center; background: transparent; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 0.8rem; color: #666; touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
+        .tab:active { transform: scale(0.95); }
+        .tab.active { background: #1a1a2e; color: white; }
+        @media (max-width: 420px) { 
+            .tabs { gap: 2px; padding: 3px; }
+            .tab { min-width: 55px; padding: 12px 4px; font-size: 0.7rem; }
+        }
+        
+        .card { background: white; border-radius: 16px; padding: 16px; margin-bottom: 12px; }
+        
+        .dash-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+        .dash-card { background: #f8f9fb; border-radius: 12px; padding: 14px; text-align: center; }
+        .dash-card.highlight { background: #1a1a2e; }
+        .dash-card.highlight .dash-name { color: rgba(255,255,255,0.7); }
+        .dash-card.highlight .dash-amt { color: #00D084; }
+        .dash-name { font-size: 0.7rem; font-weight: 600; color: #666; text-transform: uppercase; }
+        .dash-amt { font-size: 1.3rem; font-weight: 700; color: #1a1a2e; }
+
+        /* Property Card */
+        .property-card { background: white; border-radius: 16px; padding: 16px; margin-bottom: 12px; border: 2px solid #0D8A86; }
+        .property-card-title { font-size: 0.95rem; font-weight: 700; color: #0D8A86; margin-bottom: 12px; display: flex; align-items: center; gap: 6px; }
+        .property-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px; }
+        .property-stat { background: #f0fafa; border-radius: 10px; padding: 12px; text-align: center; }
+        .property-stat.positive { background: #e8faf3; }
+        .property-stat.negative { background: #fff3f0; }
+        .property-stat-label { font-size: 0.65rem; font-weight: 600; color: #0D8A86; text-transform: uppercase; margin-bottom: 4px; }
+        .property-stat-val { font-size: 1.1rem; font-weight: 700; color: #1a1a2e; }
+        .property-stat-val.green { color: #00D084; }
+        .property-stat-val.red { color: #e05252; }
+        .property-stat-val.teal { color: #0D8A86; }
+        .property-meta { font-size: 0.72rem; color: #666; display: flex; justify-content: space-between; padding-top: 6px; border-top: 1px solid #e0f0f0; }
+
+        /* Action Items Banner */
+        .action-banner { background: #fff8e1; border: 1.5px solid #f5c518; border-radius: 14px; padding: 14px; margin-bottom: 12px; position: relative; }
+        .action-banner-title { font-size: 0.85rem; font-weight: 700; color: #7a5c00; margin-bottom: 8px; }
+        .action-banner ul { padding-left: 18px; }
+        .action-banner li { font-size: 0.78rem; color: #7a5c00; margin-bottom: 4px; line-height: 1.4; }
+        .action-banner-close { position: absolute; top: 10px; right: 12px; background: none; border: none; font-size: 1.1rem; color: #a0800a; cursor: pointer; line-height: 1; }
+        
+        .section-title { font-size: 0.85rem; font-weight: 700; margin-bottom: 10px; display: flex; align-items: center; gap: 6px; }
+        
+        .guide-group { margin-bottom: 16px; }
+        .guide-group-title { font-size: 0.75rem; font-weight: 600; color: #00a866; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px; }
+        .guide-group-title.income-title { color: #0D8A86; }
+        
+        .guide-item { display: flex; align-items: center; gap: 10px; padding: 12px; background: #f8f9fb; border-radius: 10px; margin-bottom: 6px; cursor: pointer; transition: background 0.15s; }
+        .guide-item:hover { background: #f0f3f8; }
+        .guide-item.income-item { background: #f0fafa; }
+        .guide-item.income-item:hover { background: #e0f5f5; }
+        .guide-info { flex: 1; }
+        .guide-name { font-weight: 600; font-size: 0.85rem; }
+        .guide-who { font-size: 0.7rem; color: #666; }
+        
+        .form-group { margin-bottom: 12px; }
+        .form-group label { display: block; font-size: 0.7rem; font-weight: 600; color: #666; margin-bottom: 4px; text-transform: uppercase; }
+        .form-group input, .form-group select { width: 100%; padding: 10px 12px; border: 2px solid #e8e8ec; border-radius: 8px; font-size: 0.9rem; font-family: inherit; }
+        .form-group input:focus { outline: none; border-color: #1a1a2e; }
+        
+        .entity-row { display: flex; gap: 6px; }
+        .entity-btn { flex: 1; padding: 8px; border-radius: 8px; border: 2px solid #e8e8ec; background: white; cursor: pointer; font-size: 0.75rem; font-weight: 600; }
+        .entity-btn.selected { border-color: #1a1a2e; background: #1a1a2e; color: white; }
+        
+        /* Property toggle */
+        .property-toggle { display: flex; align-items: center; gap: 10px; padding: 10px 12px; background: #f0fafa; border: 1.5px solid #b2dede; border-radius: 8px; cursor: pointer; margin-bottom: 12px; }
+        .property-toggle input[type="checkbox"] { width: 18px; height: 18px; accent-color: #0D8A86; cursor: pointer; }
+        .property-toggle-label { font-size: 0.85rem; font-weight: 600; color: #0D8A86; cursor: pointer; }
+        
+        .btn { background: #1a1a2e; color: white; padding: 12px 16px; border-radius: 10px; border: none; font-weight: 600; cursor: pointer; width: 100%; font-size: 0.9rem; }
+        
+        .file-label { display: flex; align-items: center; justify-content: center; gap: 6px; padding: 10px; border: 2px dashed #ccc; border-radius: 8px; cursor: pointer; color: #666; font-size: 0.85rem; }
+        .file-label:hover { border-color: #1a1a2e; }
+        .file-input { display: none; }
+        
+        .expense-row { display: flex; align-items: center; gap: 10px; padding: 12px 0; border-bottom: 1px solid #eee; }
+        .expense-row:last-child { border-bottom: none; }
+        .expense-info { flex: 1; }
+        .expense-desc { font-weight: 600; font-size: 0.85rem; }
+        .expense-meta { font-size: 0.7rem; color: #888; }
+        .expense-amt { font-weight: 700; color: #1a1a2e; }
+        .expense-amt.income { color: #00D084; }
+        .delete-btn { background: none; border: none; color: #ccc; font-size: 1.2rem; cursor: pointer; }
+        
+        .empty { text-align: center; color: #999; padding: 24px; font-size: 0.85rem; }
+        .hidden { display: none; }
+        
+        .info-box { background: #fff8e1; padding: 10px 12px; border-radius: 8px; font-size: 0.75rem; color: #7a6a00; margin-bottom: 12px; }
+        .property-badge { display: inline-block; font-size: 0.65rem; background: #e0f5f5; color: #0D8A86; border-radius: 4px; padding: 1px 5px; margin-left: 4px; font-weight: 600; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🧾 Tax Tracker</h1>
+            <div class="fy">FY26 · 1 Jul 2025 – 30 Jun 2026</div>
+        </div>
+        
+        <div class="tabs">
+            <button class="tab active" data-tab="dashboard" onclick="showTab('dashboard')">📊 Dashboard</button>
+            <button class="tab" data-tab="camera" onclick="showTab('camera')">📷</button>
+            <button class="tab" data-tab="depre" onclick="showTab('depre')">📉 Depre</button>
+            <button class="tab" data-tab="tax" onclick="showTab('tax')">💰 Tax</button>
+            <button class="tab" data-tab="add" onclick="showTab('add')">➕ Add</button>
+            <button class="tab" data-tab="backup" onclick="showTab('backup')">💾</button>
+        </div>
+        
+        <!-- DEPRECIAÇÃO -->
+        <div id="tab-depre" class="hidden" style="display:none">
+            <div class="card">
+                <div class="section-title">📉 Depreciação (Division 43)</div>
+                <div class="form-group">
+                    <label>Construction Cost ($)</label>
+                    <input type="number" id="depre-construction" placeholder="e.g. 450000" value="450000">
+                </div>
+                <div class="form-group">
+                    <label>Construction Year</label>
+                    <input type="number" id="depre-year" placeholder="e.g. 2010" value="2010">
+                </div>
+                <div class="form-group">
+                    <label>Annual Rate (%)</label>
+                    <select id="depre-rate">
+                        <option value="0.025">2.5% (standard)</option>
+                        <option value="0.04">4%</option>
+                        <option value="0.025">2.5%</option>
+                    </select>
+                </div>
+                <button class="btn" onclick="calcDepre()">Calculate</button>
+            </div>
+            <div class="card" id="depre-result" style="display:none">
+                <div class="property-grid">
+                    <div class="property-stat">
+                        <div class="property-stat-label">Annual Depreciation</div>
+                        <div class="property-stat-val" id="depre-annual">$0</div>
+                    </div>
+                    <div class="property-stat">
+                        <div class="property-stat-label">FY26 Pro-rata</div>
+                        <div class="property-stat-val teal" id="depre-pro-rata">$0</div>
+                    </div>
+                    <div class="property-stat">
+                        <div class="property-stat-label">Cumulative</div>
+                        <div class="property-stat-val" id="depre-cumulative">$0</div>
+                    </div>
+                    <div class="property-stat positive">
+                        <div class="property-stat-label">Claim Each</div>
+                        <div class="property-stat-val green" id="depre-claim">$0</div>
+                    </div>
+                </div>
+                <div class="info-box">10 Apr - 30 Jun 2026 = 81 days (22.2% of year). Cada um (Jana + Juliano) pode claimarmetade.</div>
+            </div>
+        </div>
+        
+        <!-- TAX OPTIMIZER -->
+        <div id="tab-tax" class="hidden" style="display:none">
+            <div class="card">
+                <div class="section-title">📊 Otimizador de Tax</div>
+                <div class="form-group">
+                    <label>Salary Jana ($)</label>
+                    <input type="number" id="tax-jana-salary" value="205000">
+                </div>
+                <div class="form-group">
+                    <label>Salary Juliano ($)</label>
+                    <input type="number" id="tax-juliano-salary" value="150000">
+                </div>
+                <button class="btn" onclick="calcTax()">Calculate</button>
+            </div>
+            <div class="card" id="tax-result" style="display:none">
+                <div class="property-grid">
+                    <div class="property-stat">
+                        <div class="property-stat-label">Jana Tax Rate</div>
+                        <div class="property-stat-val" id="tax-jana-rate">0%</div>
+                    </div>
+                    <div class="property-stat">
+                        <div class="property-stat-label">Juliano Tax Rate</div>
+                        <div class="property-stat-val" id="tax-juliano-rate">0%</div>
+                    </div>
+                </div>
+                <div class="info-box" id="tax-recommendation"></div>
+            </div>
+        </div>
+        
+        <!-- DASHBOARD -->
+        <div id="tab-dashboard">
+
+            <!-- Action Items Banner -->
+            <div class="action-banner" id="actionBanner">
+                <button class="action-banner-close" onclick="dismissBanner()">✕</button>
+                <div class="action-banner-title">⚡ Action Items</div>
+                <ul>
+                    <li>Order depreciation schedule — Duo Tax <strong>1300 266 386</strong> (~$550)</li>
+                    <li>Keep ALL receipts from 10 April</li>
+                    <li>Get loan interest breakdown from bank</li>
+                    <li>Find accountant before June</li>
+                </ul>
+            </div>
+
+            <div class="card">
+                <div class="dash-grid">
+                    <div class="dash-card highlight">
+                        <div class="dash-name">Total</div>
+                        <div class="dash-amt" id="dash-total">$0</div>
+                    </div>
+                    <div class="dash-card"><div class="dash-name">Jana</div><div class="dash-amt" id="dash-jana">$0</div></div>
+                    <div class="dash-card"><div class="dash-name">Juliano</div><div class="dash-amt" id="dash-juliano">$0</div></div>
+                    <div class="dash-card"><div class="dash-name">Urbix</div><div class="dash-amt" id="dash-urbix">$0</div></div>
+                </div>
+            </div>
+
+            <!-- Property Summary Card -->
+            <div class="property-card">
+                <div class="property-card-title">🏠 11 Central Ave, Nirimba</div>
+                <div class="property-grid">
+                    <div class="property-stat">
+                        <div class="property-stat-label">Rental Income YTD</div>
+                        <div class="property-stat-val green" id="prop-income">$0</div>
+                    </div>
+                    <div class="property-stat">
+                        <div class="property-stat-label">Deductions YTD</div>
+                        <div class="property-stat-val teal" id="prop-deductions">$0</div>
+                    </div>
+                    <div class="property-stat">
+                        <div class="property-stat-label">Net Position</div>
+                        <div class="property-stat-val" id="prop-net">$0</div>
+                    </div>
+                    <div class="property-stat">
+                        <div class="property-stat-label">Est. Tax Refund</div>
+                        <div class="property-stat-val" id="prop-refund">—</div>
+                    </div>
+                </div>
+                <div class="property-meta">
+                    <span>💵 Weekly rent: $740</span>
+                    <span>📅 Rental start: 10 Apr 2026</span>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="section-title">Recent</div>
+                <div id="recentList"></div>
+            </div>
+        </div>
+        
+        <!-- GUIDE -->
+        <div id="tab-guide" class="hidden" style="display:none">
+            <div class="info-box">💡 Click an item to add. Enter YOUR amount.</div>
+            
+            <div class="card">
+
+                <!-- Income Section -->
+                <div class="guide-group">
+                    <div class="guide-group-title income-title">💰 Income</div>
+                    <div class="guide-item income-item" onclick="goToAddIncome('Rental Income ($740/week)', 'Rental Income', ['Jana','Juliano'])">
+                        <div class="guide-info">
+                            <div class="guide-name" style="color:#0D8A86">Rental Income ($740/week)</div>
+                            <div class="guide-who">Jana + Juliano · track weekly rent received</div>
+                        </div>
+                        <span style="color:#0D8A86;font-size:1.1rem">＋</span>
+                    </div>
+                </div>
+
+                <div class="guide-group">
+                    <div class="guide-group-title">📅 Monthly</div>
+                    <div class="guide-item" onclick="goToAdd('Internet', 'Internet', ['Jana'])">
+                        <div class="guide-info"><div class="guide-name">Internet</div><div class="guide-who">Jana · 100%</div></div>
+                    </div>
+                    <div class="guide-item" onclick="goToAdd('Internet', 'Internet', ['Juliano'])">
+                        <div class="guide-info"><div class="guide-name">Internet</div><div class="guide-who">Juliano · 100%</div></div>
+                    </div>
+                    <div class="guide-item" onclick="goToAdd('Mortgage Interest', 'Mortgage Interest', ['Jana','Juliano'])">
+                        <div class="guide-info"><div class="guide-name">Mortgage Interest</div><div class="guide-who">Property · Jana + Juliano each</div></div>
+                    </div>
+                    <div class="guide-item" onclick="goToAdd('Property Management', 'Management Fee', ['Jana','Juliano'])">
+                        <div class="guide-info"><div class="guide-name">Property Management</div><div class="guide-who">8-10% rent</div></div>
+                    </div>
+                    <div class="guide-item" onclick="goToAdd('Software/Subscriptions', 'Software', ['Jana'])">
+                        <div class="guide-info"><div class="guide-name">Software (Figma, Adobe...)</div><div class="guide-who">Jana · 100%</div></div>
+                    </div>
+                    <div class="guide-item" onclick="goToAdd('Landlord Insurance', 'Insurance', ['Jana','Juliano'], true)">
+                        <div class="guide-info"><div class="guide-name">Landlord Insurance</div><div class="guide-who">Jana + Juliano · monthly or annual</div></div>
+                    </div>
+                    <div class="guide-item" onclick="goToAdd('Water Rates', 'Water Rates', ['Jana','Juliano'], true)">
+                        <div class="guide-info"><div class="guide-name">Water Rates</div><div class="guide-who">Jana + Juliano · quarterly</div></div>
+                    </div>
+                    <div class="guide-item" onclick="goToAdd('Body Corp/Strata', 'Body Corp', ['Jana','Juliano'], true)">
+                        <div class="guide-info"><div class="guide-name">Body Corp/Strata</div><div class="guide-who">Jana + Juliano · quarterly</div></div>
+                    </div>
+                </div>
+                
+                <div class="guide-group">
+                    <div class="guide-group-title">📅 Quarterly</div>
+                    <div class="guide-item" onclick="goToAdd('Council Rates', 'Council Rates', ['Jana','Juliano'])">
+                        <div class="guide-info"><div class="guide-name">Council Rates</div><div class="guide-who">QLD · due Apr/Jul/Oct</div></div>
+                    </div>
+                </div>
+                
+                <div class="guide-group">
+                    <div class="guide-group-title">📅 Annually</div>
+                    <div class="guide-item" onclick="goToAdd('Landlord Insurance', 'Insurance', ['Jana','Juliano'])">
+                        <div class="guide-info"><div class="guide-name">Landlord Insurance</div><div class="guide-who">Property</div></div>
+                    </div>
+                    <div class="guide-item" onclick="goToAdd('Engineers Australia', 'Membership', ['Juliano'])">
+                        <div class="guide-info"><div class="guide-name">Engineers Australia</div><div class="guide-who">Juliano · membership</div></div>
+                    </div>
+                    <div class="guide-item" onclick="goToAdd('MBA / Education', 'Education', ['Jana'])">
+                        <div class="guide-info"><div class="guide-name">MBA / Education</div><div class="guide-who">Jana · courses</div></div>
+                    </div>
+                    <div class="guide-item" onclick="goToAdd('Professional Development', 'Education', ['Juliano'])">
+                        <div class="guide-info"><div class="guide-name">Professional Development</div><div class="guide-who">Juliano · courses</div></div>
+                    </div>
+                    <div class="guide-item" onclick="goToAdd('Depreciation Schedule', 'Depreciation (Building)', ['Jana','Juliano'], true)">
+                        <div class="guide-info"><div class="guide-name">Depreciation Schedule</div><div class="guide-who">Quantity Surveyor</div></div>
+                    </div>
+                </div>
+                
+                <div class="guide-group">
+                    <div class="guide-group-title">📅 If Applicable</div>
+                    <div class="guide-item" onclick="goToAdd('CFD Trading Loss', 'Trading Loss', ['Juliano'])">
+                        <div class="guide-info"><div class="guide-name">CFD Trading Loss</div><div class="guide-who">Juliano · offset income</div></div>
+                    </div>
+                    <div class="guide-item" onclick="goToAdd('Maintenance/Repairs', 'Maintenance', ['Jana','Juliano'])">
+                        <div class="guide-info"><div class="guide-name">Maintenance/Repairs</div><div class="guide-who">Property</div></div>
+                    </div>
+                    <div class="guide-item" onclick="goToAdd('Home Office Equipment', 'Equipment', ['Jana'])">
+                        <div class="guide-info"><div class="guide-name">Home Office Equipment</div><div class="guide-who">Jana · desk, chair...</div></div>
+                    </div>
+                    <div class="guide-item" onclick="goToAdd('Home Office Equipment', 'Equipment', ['Juliano'])">
+                        <div class="guide-info"><div class="guide-name">Home Office Equipment</div><div class="guide-who">Juliano · desk, chair...</div></div>
+                    </div>
+                    <div class="guide-item" onclick="goToAdd('Repairs', 'Repairs', ['Jana','Juliano'], true)">
+                        <div class="guide-info"><div class="guide-name">Repairs</div><div class="guide-who">Jana + Juliano · property repairs</div></div>
+                    </div>
+                    <div class="guide-item" onclick="goToAdd('Pest Inspection', 'Pest Control', ['Jana','Juliano'], true)">
+                        <div class="guide-info"><div class="guide-name">Pest Inspection</div><div class="guide-who">Jana + Juliano</div></div>
+                    </div>
+                    <div class="guide-item" onclick="goToAdd('Advertising for Tenants', 'Advertising', ['Jana','Juliano'], true)">
+                        <div class="guide-info"><div class="guide-name">Advertising for Tenants</div><div class="guide-who">Jana + Juliano</div></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- ADD -->
+        <div id="tab-add" class="hidden" style="display:none">
+            <div class="card">
+                <div class="form-group">
+                    <label>What did you pay for?</label>
+                    <input type="text" id="desc" placeholder="e.g. Internet, Mortgage...">
+                </div>
+                <div class="form-group">
+                    <label>Amount ($)</label>
+                    <input type="number" id="amt" placeholder="0.00">
+                </div>
+                <div class="form-group">
+                    <label>Date</label>
+                    <input type="date" id="date">
+                </div>
+                <div class="form-group">
+                    <label>Category</label>
+                    <select id="cat">
+                        <option value="Home Office">Home Office</option>
+                        <option value="Internet">Internet</option>
+                        <option value="Phone">Phone</option>
+                        <option value="Software">Software</option>
+                        <option value="Equipment">Equipment</option>
+                        <option value="Education">Education</option>
+                        <option value="Membership">Membership</option>
+                        <option value="Insurance">Insurance</option>
+                        <option value="Mortgage Interest">Mortgage Interest</option>
+                        <option value="Council Rates">Council Rates</option>
+                        <option value="Land Tax">Land Tax</option>
+                        <option value="Maintenance">Maintenance</option>
+                        <option value="Management Fee">Management Fee</option>
+                        <option value="Depreciation">Depreciation</option>
+                        <option value="Trading Loss">Trading Loss</option>
+                        <option value="Water Rates">Water Rates</option>
+                        <option value="Body Corp">Body Corp</option>
+                        <option value="Repairs">Repairs</option>
+                        <option value="Depreciation (Building)">Depreciation (Building)</option>
+                        <option value="Depreciation (Plant)">Depreciation (Plant)</option>
+                        <option value="Advertising">Advertising</option>
+                        <option value="Pest Control">Pest Control</option>
+                        <option value="Rental Income">Rental Income</option>
+                        <option value="Other">Other</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Who claims 100%?</label>
+                    <div class="entity-row">
+                        <button class="entity-btn" onclick="toggleEntity(this, 'Jana')">Jana</button>
+                        <button class="entity-btn" onclick="toggleEntity(this, 'Juliano')">Juliano</button>
+                        <button class="entity-btn" onclick="toggleEntity(this, 'Urbix')">Urbix</button>
+                        <button class="entity-btn" onclick="toggleEntity(this, 'NZ')">NZ</button>
+                    </div>
+                </div>
+
+                <!-- Property expense toggle -->
+                <label class="property-toggle" for="propertyCheck">
+                    <input type="checkbox" id="propertyCheck">
+                    <span class="property-toggle-label">🏠 Property expense? (11 Central Ave)</span>
+                </label>
+
+                <div class="form-group">
+                    <label>Receipt (optional)</label>
+                    <label class="file-label" for="receiptFile">📎 Attach receipt</label>
+                    <input type="file" id="receiptFile" class="file-input" accept="image/*,.pdf">
+                </div>
+                <button class="btn" onclick="addExpense()">Add</button>
+            </div>
+        </div>
+        
+        <!-- CAMERA -->
+        <div id="tab-camera" class="hidden" style="display:none">
+            <div class="card">
+                <div class="section-title">📷 Tire a foto do recibo</div>
+                <video id="camera-video" autoplay playsinline style="width:100%;border-radius:12px;background:#000;display:none"></video>
+                <canvas id="camera-canvas" style="display:none"></canvas>
+                <img id="camera-preview" style="width:100%;border-radius:12px;display:none;margin-bottom:12px">
+                
+                <button class="btn" id="btn-start-camera" onclick="startCamera()" style="margin-bottom:8px">📷 Abrir Câmera</button>
+                <button class="btn" id="btn-capture" onclick="capturePhoto()" style="margin-bottom:8px;display:none">🔴 Capturar</button>
+            </div>
+            
+            <div class="card" id="camera-form" style="display:none">
+                <div class="form-group">
+                    <label>Description</label>
+                    <input type="text" id="cam-desc" placeholder="e.g. Internet, Council Rates...">
+                </div>
+                <div class="form-group">
+                    <label>Amount ($)</label>
+                    <input type="number" id="cam-amt" placeholder="0.00">
+                </div>
+                <div class="form-group">
+                    <label>Who claims?</label>
+                    <div class="entity-row">
+                        <button class="entity-btn" onclick="toggleCamEntity(this, 'Jana')">Jana</button>
+                        <button class="entity-btn" onclick="toggleCamEntity(this, 'Juliano')">Juliano</button>
+                        <button class="entity-btn" onclick="toggleCamEntity(this, 'Urbix')">Urbix</button>
+                        <button class="entity-btn" onclick="toggleCamEntity(this, 'NZ')">NZ</button>
+                    </div>
+                </div>
+                <label class="property-toggle" for="cam-property">
+                    <input type="checkbox" id="cam-property">
+                    <span class="property-toggle-label">🏠 Property expense?</span>
+                </label>
+                <button class="btn" onclick="saveCamExpense()">💾 Salvar</button>
+            </div>
+        </div>
+        <div id="tab-backup" class="hidden" style="display:none">
+            <div class="card">
+                <div class="section-title">💾 Backup</div>
+                <p style="font-size:0.8rem;color:#666;margin-bottom:12px">Export seus dados para um arquivo JSON. Salve em lugar seguro!</p>
+                <button class="btn" onclick="exportData()" style="margin-bottom:8px">📥 Export JSON</button>
+                <button class="btn" onclick="document.getElementById('importFile').click()" style="margin-bottom:8px">📤 Import JSON</button>
+                <input type="file" id="importFile" style="display:none" accept=".json" onchange="importData(this)">
+            </div>
+        </div>
+        
+        <!-- LIST -->
+        <div id="tab-list" class="hidden" style="display:none">
+            <div class="card"><div id="allList"></div></div>
+        </div>
+    </div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+const supabaseUrl = 'https://fxjtwbnmumdsqoajbzun.supabase.co';
+const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ4anR3Ym5tdW1kc3FvYWpienVuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzExNjA2ODYsImV4cCI6MjA4NjczNjY4Nn0.pvYrEJSKc7LjCzYYGu7mt0ZXUt7ktPShfvxMostkTkc';
+const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+
+let selectedEntities = [];
+let expenses = JSON.parse(localStorage.getItem('taxExp2026') || '[]');
+
+// Action banner
+function dismissBanner() {
+    localStorage.setItem('actionBannerDismissed', '1');
+    const el = document.getElementById('actionBanner');
+    if(el) el.style.display = 'none';
+}
+if(localStorage.getItem('actionBannerDismissed') === '1') {
+    document.addEventListener('DOMContentLoaded', () => {
+        const el = document.getElementById('actionBanner');
+        if(el) el.style.display = 'none';
+    });
+    // Also apply immediately if DOM ready
+    const el = document.getElementById('actionBanner');
+    if(el) el.style.display = 'none';
+}
+
+function showTab(tab) {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelector(`.tab[data-tab="${tab}"]`).classList.add('active');
+    ['dashboard','camera','depre','tax','add','backup'].forEach(id => {
+        const el = document.getElementById('tab-' + id);
+        if(id === tab) { el.classList.remove('hidden'); el.style.display = ''; }
+        else { el.classList.add('hidden'); el.style.display = 'none'; }
+    });
+    if(tab === 'dashboard') renderDashboard();
+    if(tab === 'list') renderAll();
+}
+
+function calcDepre() {
+    const construction = parseFloat(document.getElementById('depre-construction').value) || 0;
+    const year = parseInt(document.getElementById('depre-year').value) || 2010;
+    const rate = parseFloat(document.getElementById('depre-rate').value) || 0.025;
+    
+    const annual = construction * rate;
+    const yearsElapsed = Math.max(0, 2026 - year);
+    const cumulative = annual * yearsElapsed;
+    const proRata = annual * (81/365); // 10 Apr - 30 Jun
+    const each = proRata / 2; // Split between Jana + Juliano
+    
+    document.getElementById('depre-annual').textContent = fmt(annual);
+    document.getElementById('depre-pro-rata').textContent = fmt(proRata);
+    document.getElementById('depre-cumulative').textContent = fmt(cumulative);
+    document.getElementById('depre-claim').textContent = fmt(each);
+    document.getElementById('depre-result').style.display = '';
+}
+
+function calcTax() {
+    const janaSalary = parseFloat(document.getElementById('tax-jana-salary').value) || 205000;
+    const julianoSalary = parseFloat(document.getElementById('tax-juliano-salary').value) || 150000;
+    
+    // AU tax brackets 2025-26
+    function taxRate(income) {
+        if(income <= 18200) return 0;
+        if(income <= 45000) return 0.19;
+        if(income <= 120000) return 0.325;
+        if(income <= 190000) return 0.37;
+        return 0.45;
+    }
+    
+    const janaRate = taxRate(janaSalary);
+    const julianoRate = taxRate(julianoSalary);
+    
+    document.getElementById('tax-jana-rate').textContent = (janaRate * 100).toFixed(0) + '%';
+    document.getElementById('tax-juliano-rate').textContent = (julianoRate * 100).toFixed(0) + '%';
+    
+    const janaExpenses = expenses.filter(e => e.entities.includes('Jana')).reduce((a,e) => a + e.amount, 0);
+    const julianoExpenses = expenses.filter(e => e.entities.includes('Juliano')).reduce((a,e) => a + e.amount, 0);
+    
+    let rec = '';
+    if(janaExpenses > julianoExpenses * 1.2) {
+        rec = '✅ Jana claima + deductions: $' + (janaExpenses - julianoExpenses).toLocaleString();
+    } else if(julianoExpenses > janaExpenses * 1.2) {
+        rec = '✅ Juliano claima +: $' + (julianoExpenses - janaExpenses).toLocaleString();
+    } else {
+        rec = '⚖️ Cada um claima o seu (similar)';
+    }
+    rec += '<br><br>💡 Maior tax rate = claimar mais deductions.';
+    
+    document.getElementById('tax-recommendation').innerHTML = rec;
+    document.getElementById('tax-result').style.display = '';
+}
+
+// Camera functions
+let camStream = null;
+let camEntities = [];
+let capturedPhoto = null;
+
+function startCamera() {
+    navigator.mediaDevices.getUserMedia({video: {facingMode: 'environment'}})
+    .then(stream => {
+        camStream = stream;
+        const video = document.getElementById('camera-video');
+        video.srcObject = stream;
+        video.style.display = '';
+        document.getElementById('btn-start-camera').style.display = 'none';
+        document.getElementById('btn-capture').style.display = '';
+    })
+    .catch(err => alert('Camera error: ' + err.message));
+}
+
+function capturePhoto() {
+    const video = document.getElementById('camera-video');
+    const canvas = document.getElementById('camera-canvas');
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    canvas.getContext('2d').drawImage(video, 0, 0);
+    capturedPhoto = canvas.toDataURL('image/jpeg', 0.8);
+    
+    // Stop camera
+    camStream.getTracks().forEach(t => t.stop());
+    video.style.display = 'none';
+    document.getElementById('btn-capture').style.display = 'none';
+    document.getElementById('camera-preview').src = capturedPhoto;
+    document.getElementById('camera-preview').style.display = '';
+    document.getElementById('camera-form').style.display = '';
+}
+
+function toggleCamEntity(btn, entity) {
+    btn.classList.toggle('selected');
+    camEntities = camEntities.includes(entity) 
+        ? camEntities.filter(e => e !== entity) 
+        : [...camEntities, entity];
+}
+
+function saveCamExpense() {
+    const desc = document.getElementById('cam-desc').value.trim();
+    const amt = parseFloat(document.getElementById('cam-amt').value) || 0;
+    if(!desc) {
+        alert('Enter description');
+        return;
+    }
+    
+    // Auto-allocate: ALL to Jana (45% tax optimization)
+    const isUrbix = desc.toLowerCase().includes('urbix');
+    const isNZ = desc.toLowerCase().includes('nz');
+    
+    const expense = {
+        id: Date.now(),
+        desc: desc,
+        amount: amt,
+        date: new Date().toISOString().split('T')[0],
+        category: 'Receipt',
+        entities: isUrbix ? ['Urbix'] : isNZ ? ['NZ'] : ['Jana'],
+        propertyRelated: document.getElementById('cam-property').checked,
+        receiptName: 'receipt.jpg',
+        receiptUrl: capturedPhoto
+    };
+        entities: [...camEntities],
+        propertyRelated: document.getElementById('cam-property').checked,
+        receiptName: 'receipt.jpg',
+        receiptUrl: capturedPhoto
+    };
+    expenses.push(expense);
+    save();
+    alert('Saved!');
+    capturedPhoto = null;
+    camEntities = [];
+    showTab('dashboard');
+}
+
+function exportData() {
+    // Export as CSV for Google Sheets
+    const headers = ['Date', 'Description', 'Amount', 'Category', 'Who Claims', 'Property', 'Receipt'];
+    const rows = expenses.map(e => [
+        e.date,
+        e.desc,
+        e.amount,
+        e.category,
+        e.entities.join('; '),
+        e.propertyRelated ? 'Yes' : 'No',
+        e.receiptName || ''
+    ]);
+    const csv = [headers, ...rows].map(r => r.map(c => '"' + String(c).replace(/"/g, '""') + '"').join(',')).join('\n');
+    
+    const blob = new Blob(['\ufeff' + csv], {type: 'text/csv;charset=utf-8'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'tax-tracker-FY26-' + new Date().toISOString().split('T')[0] + '.csv';
+    a.click();
+    URL.revokeObjectURL(url);
+}
+
+function importData(input) {
+    const file = input.files[0];
+    if(!file) return;
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        try {
+            // Try JSON first
+            if(file.name.endsWith('.json')) {
+                const data = JSON.parse(e.target.result);
+                if(data.expenses && Array.isArray(data.expenses)) {
+                    expenses = data.expenses;
+                    save();
+                    alert('Importado! ' + expenses.length + ' itens');
+                }
+            } else {
+                // CSV - convert to expenses
+                const lines = e.target.result.split('\n');
+                for(let i = 1; i < lines.length; i++) {
+                    const cols = lines[i].split(',');
+                    if(cols.length >= 5) {
+                        expenses.push({
+                            id: Date.now() + i,
+                            date: cols[0].replace(/"/g, ''),
+                            desc: cols[1].replace(/"/g, ''),
+                            amount: parseFloat(cols[2]) || 0,
+                            category: cols[3].replace(/"/g, ''),
+                            entities: cols[4].replace(/"/g, '').split(';'),
+                            propertyRelated: cols[5]?.replace(/"/g, '') === 'Yes'
+                        });
+                    }
+                }
+                save();
+                alert('Importado do CSV!');
+            }
+        } catch(err) {
+            alert('Erro: ' + err.message);
+        }
+    };
+    reader.readAsText(file);
+}
+
+function openSheets() {
+    // Create Google Sheets link with data
+    const headers = ['Date', 'Description', 'Amount', 'Category', 'Who Claims', 'Property'];
+    const rows = expenses.map(e => [
+        [e.date, e.desc, e.amount, e.category, e.entities.join('; '), e.propertyRelated ? 'Yes' : 'No']
+    ]);
+    const all = [headers, ...rows.map(r => r.join(','))].join('\n');
+    const encoded = encodeURIComponent(all);
+    window.open('https://docs.google.com/spreadsheets/d/new?template=ever&text=' + encoded, '_blank');
+}
+
+function goToAdd(desc, cat, entities, isProperty) {
+    document.getElementById('desc').value = desc;
+    // Set category if it exists
+    const catSelect = document.getElementById('cat');
+    for(let i = 0; i < catSelect.options.length; i++) {
+        if(catSelect.options[i].value === cat) { catSelect.selectedIndex = i; break; }
+    }
+    document.querySelectorAll('.entity-btn').forEach(b => b.classList.remove('selected'));
+    selectedEntities = entities;
+    entities.forEach(ent => {
+        document.querySelectorAll('.entity-btn').forEach(b => {
+            if(b.textContent === ent) b.classList.add('selected');
+        });
+    });
+    document.getElementById('propertyCheck').checked = !!isProperty;
+    showTab('add');
+    document.getElementById('amt').focus();
+}
+
+function goToAddIncome(desc, cat, entities) {
+    document.getElementById('desc').value = desc;
+    const catSelect = document.getElementById('cat');
+    for(let i = 0; i < catSelect.options.length; i++) {
+        if(catSelect.options[i].value === cat) { catSelect.selectedIndex = i; break; }
+    }
+    document.querySelectorAll('.entity-btn').forEach(b => b.classList.remove('selected'));
+    selectedEntities = entities;
+    entities.forEach(ent => {
+        document.querySelectorAll('.entity-btn').forEach(b => {
+            if(b.textContent === ent) b.classList.add('selected');
+        });
+    });
+    document.getElementById('propertyCheck').checked = true;
+    showTab('add');
+    document.getElementById('amt').focus();
+}
+
+function toggleEntity(btn, entity) {
+    btn.classList.toggle('selected');
+    selectedEntities = selectedEntities.includes(entity) 
+        ? selectedEntities.filter(e => e !== entity) 
+        : [...selectedEntities, entity];
+}
+
+function save() {
+    localStorage.setItem('taxExp2026', JSON.stringify(expenses));
+    renderDashboard();
+}
+
+function addExpense() {
+    const desc = document.getElementById('desc').value.trim();
+    const amt = parseFloat(document.getElementById('amt').value) || 0;
+    const date = document.getElementById('date').value || new Date().toISOString().split('T')[0];
+    const cat = document.getElementById('cat').value;
+    const propertyRelated = document.getElementById('propertyCheck').checked;
+    const receiptFile = document.getElementById('receiptFile').files[0];
+    
+    if(!desc || selectedEntities.length === 0) {
+        alert('Enter description + select who claims');
+        return;
+    }
+    
+    const expense = {
+        id: Date.now(),
+        desc,
+        amount: amt,
+        date,
+        category: cat,
+        entities: [...selectedEntities],
+        propertyRelated: propertyRelated,
+        receiptName: null,
+        receiptUrl: null
+    };
+    
+    // Simple receipt storage - save as dataURL in localStorage
+    if(receiptFile) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            expense.receiptName = receiptFile.name;
+            expense.receiptUrl = e.target.result; // base64 data
+            saveExpense(expense);
+        };
+        reader.readAsDataURL(receiptFile);
+    } else {
+        saveExpense(expense);
+    }
+}
+
+function saveExpense(expense) {
+    // AUTO-ALLOCATION: Tax Optimization
+    // Jana = 45% tax rate, Juliano = 37%
+    // Every $100: Jana saves $45, Juliano saves $37
+    // → ALL personal expenses go to Jana!
+    
+    if(expense.entities.length === 0) {
+        const isUrbix = expense.category?.includes('Hosting') || 
+                       expense.category?.includes('API') ||
+                       expense.category?.includes('Marketing') ||
+                       expense.desc?.toLowerCase().includes('urbix');
+        const isNZ = expense.category?.includes('NZ') || 
+                     expense.desc?.toLowerCase().includes('nz');
+        
+        // Business expenses go to business
+        if(isUrbix) {
+            expense.entities = ['Urbix'];
+        } else if(isNZ) {
+            expense.entities = ['NZ'];
+        } else {
+            // ALL other expenses → Jana (45% vs 37%)
+            expense.entities = ['Jana'];
+        }
+    }
+    
+    expenses.push(expense);
+    save();
+    
+    document.getElementById('desc').value = '';
+    document.getElementById('amt').value = '';
+    document.getElementById('receiptFile').value = '';
+    document.getElementById('propertyCheck').checked = false;
+    document.querySelectorAll('.entity-btn').forEach(b => b.classList.remove('selected'));
+    selectedEntities = [];
+    showTab('dashboard');
+}
+
+// Google Sheets sync
+function syncToSheets(expense) {
+    // Build Google Sheets URL with data
+    const sheetUrl = 'https://docs.google.com/spreadsheets/d/1kx5QxGK4g2X8K_fKdY3pYqJ5rKZG9/edit';
+    // Store last sync timestamp
+    localStorage.setItem('lastSync', new Date().toISOString());
+}
+
+function deleteExpense(id) {
+    if(confirm('Delete?')) {
+        expenses = expenses.filter(e => e.id !== id);
+        save();
+        renderAll();
+    }
+}
+
+function fmt(n) {
+    return '$' + Math.abs(n).toLocaleString('en-AU', {minimumFractionDigits: 0, maximumFractionDigits: 0});
+}
+
+function renderDashboard() {
+    const totals = { Jana: 0, Juliano: 0, Urbix: 0 };
+    let propIncome = 0;
+    let propDeductions = 0;
+
+    expenses.forEach(e => {
+        const isIncome = e.category === 'Rental Income';
+        if(!isIncome) {
+            // Only count non-income in expense totals
+            e.entities.forEach(ent => totals[ent] = (totals[ent] || 0) + e.amount);
+        }
+
+        // Property summary
+        if(e.propertyRelated) {
+            if(isIncome) {
+                propIncome += e.amount;
+            } else {
+                propDeductions += e.amount;
+            }
+        }
+    });
+
+    const total = Object.values(totals).reduce((a,b) => a + b, 0);
+    document.getElementById('dash-total').textContent = fmt(total);
+    document.getElementById('dash-jana').textContent = fmt(totals.Jana || 0);
+    document.getElementById('dash-juliano').textContent = fmt(totals.Juliano || 0);
+    document.getElementById('dash-urbix').textContent = fmt(totals.Urbix || 0);
+
+    // Property card
+    const netPosition = propIncome - propDeductions;
+    const estRefund = netPosition < 0 ? Math.abs(netPosition) * 0.47 : 0;
+
+    document.getElementById('prop-income').textContent = fmt(propIncome);
+    document.getElementById('prop-deductions').textContent = fmt(propDeductions);
+
+    const netEl = document.getElementById('prop-net');
+    netEl.textContent = (netPosition >= 0 ? '' : '-') + fmt(netPosition);
+    netEl.className = 'property-stat-val ' + (netPosition >= 0 ? 'green' : 'red');
+
+    const refundEl = document.getElementById('prop-refund');
+    if(estRefund > 0) {
+        refundEl.textContent = fmt(estRefund);
+        refundEl.className = 'property-stat-val green';
+    } else if(netPosition > 0) {
+        refundEl.textContent = 'Taxable';
+        refundEl.className = 'property-stat-val red';
+    } else {
+        refundEl.textContent = '—';
+        refundEl.className = 'property-stat-val teal';
+    }
+
+    const recent = expenses.slice(-5).reverse();
+    document.getElementById('recentList').innerHTML = recent.length ? recent.map(e => {
+        const isIncome = e.category === 'Rental Income';
+        return `
+        <div class="expense-row">
+            <div class="expense-info">
+                <div class="expense-desc">${e.desc}${e.propertyRelated ? '<span class="property-badge">🏠</span>' : ''}</div>
+                <div class="expense-meta">${e.date} · ${e.entities.join(', ')}</div>
+            </div>
+            <div class="expense-amt${isIncome ? ' income' : ''}">${isIncome ? '+' : ''}$${e.amount}</div>
+            <button class="delete-btn" onclick="deleteExpense(${e.id})">×</button>
+        </div>
+    `;}).join('') : '<div class="empty">No expenses yet</div>';
+}
+
+function renderAll() {
+    const sorted = [...expenses].sort((a,b) => new Date(b.date) - new Date(a.date));
+    document.getElementById('allList').innerHTML = sorted.length ? sorted.map(e => {
+        const isIncome = e.category === 'Rental Income';
+        return `
+        <div class="expense-row">
+            <div class="expense-info">
+                <div class="expense-desc">${e.desc}${e.propertyRelated ? '<span class="property-badge">🏠</span>' : ''}</div>
+                <div class="expense-meta">${e.date} · ${e.category} · ${e.entities.map(en => en + ' (100%)').join(', ')}</div>
+                ${e.receiptUrl ? '<a href="' + e.receiptUrl + '" target="_blank" style="font-size:0.7rem;color:#00a866">📎 Receipt</a>' : ''}
+            </div>
+            <div class="expense-amt${isIncome ? ' income' : ''}">${isIncome ? '+' : ''}$${e.amount}</div>
+            <button class="delete-btn" onclick="deleteExpense(${e.id})">×</button>
+        </div>
+    `;}).join('') : '<div class="empty">No expenses</div>';
+}
+
+document.getElementById('date').value = new Date().toISOString().split('T')[0];
+renderDashboard();
+</script>
+</body>
+</html>
